@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research & Content Gathering App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .control-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .slider-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e0e0e0;
+            outline: none;
+        }
+
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-idle { background: #6c757d; }
+        .status-running { background: #28a745; animation: pulse 1.5s infinite; }
+        .status-error { background: #dc3545; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .results-container {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .result-card pre {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-timestamp {
+            color: #858585;
+            margin-right: 10px;
+        }
+
+        .log-info { color: #4fc3f7; }
+        .log-success { color: #66bb6a; }
+        .log-warning { color: #ffa726; }
+        .log-error { color: #ef5350; }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Research & Content Gathering App</h1>
+            <p>Advanced research engine with live parameter controls</p>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="control-section">
+                    <h3>Status</h3>
+                    <p><span class="status-indicator status-idle" id="statusIndicator"></span><span id="statusText">Idle</span></p>
+                </div>
+
+                <div class="control-section">
+                    <h3>Research Query</h3>
+                    <div class="form-group">
+                        <label for="queryInput">Enter your research topic:</label>
+                        <textarea id="queryInput" placeholder="e.g., Latest developments in AI, Climate change research..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="sourceType">Source Type:</label>
+                        <select id="sourceType">
+                            <option value="all">All Sources</option>
+                            <option value="academic">Academic Papers</option>
+                            <option value="news">News Articles</option>
+                            <option value="technical">Technical Docs</option>
+                            <option value="social">Social Media</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Live Parameters</h3>
+                    <div class="slider-group">
+                        <label>
+                            <span>Depth Level:</span>
+                            <span id="depthValue">5</span>
+                        </label>
+                        <input type="range" id="depthSlider" min="1" max="10" value="5">
+                    </div>
+                    <div class="slider-group">
+                        <label>
+                            <span>Max Results:</span>
+                            <span id="maxResultsValue">20</span>
+                        </label>
+                        <input type="range" id="maxResultsSlider" min="5" max="100" value="20" step="5">
+                    </div>
+                    <div class="slider-group">
+                        <label>
+                            <span>Relevance Threshold:</span>
+                            <span id="relevanceValue">0.7</span>
+                        </label>
+                        <input type="range" id="relevanceSlider" min="0" max="1" value="0.7" step="0.1">
+                    </div>
+                    <div class="slider-group">
+                        <label>
+                            <span>Content Detail:</span>
+                            <span id="detailValue">5</span>
+                        </label>
+                        <input type="range" id="detailSlider" min="1" max="10" value="5">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Content Options</h3>
+                    <div class="form-group">
+                        <label for="outputFormat">Output Format:</label>
+                        <select id="outputFormat">
+                            <option value="markdown">Markdown</option>
+                            <option value="html">HTML</option>
+                            <option value="json">JSON</option>
+                            <option value="text">Plain Text</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="summaryLength">Summary Length:</label>
+                        <select id="summaryLength">
+                            <option value="brief">Brief</option>
+                            <option value="moderate">Moderate</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Actions</h3>
+                    <button class="btn btn-primary" id="startBtn">Start Research</button>
+                    <button class="btn btn-secondary" id="pauseBtn" disabled>Pause</button>
+                    <button class="btn btn-danger" id="stopBtn" disabled>Stop</button>
+                    <button class="btn btn-secondary" id="exportBtn">Export Results</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="tabs">
+                    <button class="tab active" data-tab="results">Results</button>
+                    <button class="tab" data-tab="stats">Statistics</button>
+                    <button class="tab" data-tab="logs">Logs</button>
+                    <button class="tab" data-tab="build">Content Builder</button>
+                </div>
+
+                <div id="results" class="tab-content active">
+                    <h2>Research Results</h2>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="progressBar" style="width: 0%;">0%</div>
+                    </div>
+                    <div class="results-container" id="resultsContainer">
+                        <p style="color: #6c757d; text-align: center; margin-top: 50px;">
+                            No results yet. Enter a query and click "Start Research" to begin.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="stats" class="tab-content">
+                    <h2>Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalQueries">0</div>
+                            <div class="stat-label">Total Queries</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalResults">0</div>
+                            <div class="stat-label">Results Found</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgRelevance">0%</div>
+                            <div class="stat-label">Avg Relevance</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="processingTime">0s</div>
+                            <div class="stat-label">Processing Time</div>
+                        </div>
+                    </div>
+                    <div id="statsDetails"></div>
+                </div>
+
+                <div id="logs" class="tab-content">
+                    <h2>Activity Logs</h2>
+                    <div class="log-container" id="logContainer">
+                        <div class="log-entry">
+                            <span class="log-timestamp">[00:00:00]</span>
+                            <span class="log-info">System initialized and ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="build" class="tab-content">
+                    <h2>Content Builder</h2>
+                    <div class="control-section">
+                        <h3>Build from Research</h3>
+                        <div class="form-group">
+                            <label for="contentType">Content Type:</label>
+                            <select id="contentType">
+                                <option value="article">Article</option>
+                                <option value="report">Research Report</option>
+                                <option value="summary">Executive Summary</option>
+                                <option value="presentation">Presentation</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="contentTone">Tone:</label>
+                            <select id="contentTone">
+                                <option value="professional">Professional</option>
+                                <option value="academic">Academic</option>
+                                <option value="casual">Casual</option>
+                                <option value="technical">Technical</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="buildContentBtn">Build Content</button>
+                    </div>
+                    <div id="builtContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let isPaused = false;
+        let currentTask = null;
+        let stats = {
+            totalQueries: 0,
+            totalResults: 0,
+            avgRelevance: 0,
+            processingTime: 0
+        };
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Slider updates
+        const sliders = {
+            depth: { slider: 'depthSlider', value: 'depthValue' },
+            maxResults: { slider: 'maxResultsSlider', value: 'maxResultsValue' },
+            relevance: { slider: 'relevanceSlider', value: 'relevanceValue' },
+            detail: { slider: 'detailSlider', value: 'detailValue' }
+        };
+
+        Object.entries(sliders).forEach(([key, elements]) => {
+            const slider = document.getElementById(elements.slider);
+            const valueDisplay = document.getElementById(elements.value);
+            slider.addEventListener('input', (e) => {
+                valueDisplay.textContent = e.target.value;
+                if (isRunning && !isPaused) {
+                    updateLiveParameters();
+                }
+            });
+        });
+
+        // Log function
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-timestamp">[${timestamp}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Update status
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            indicator.className = `status-indicator status-${status}`;
+            statusText.textContent = text;
+        }
+
+        // Start research
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a research query');
+                return;
+            }
+
+            isRunning = true;
+            isPaused = false;
+            updateStatus('running', 'Running');
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+
+            addLog('Starting research task...', 'info');
+
+            // Clear previous results
+            document.getElementById('resultsContainer').innerHTML = '';
+
+            try {
+                const params = {
+                    query: query,
+                    source_type: document.getElementById('sourceType').value,
+                    depth: parseInt(document.getElementById('depthSlider').value),
+                    max_results: parseInt(document.getElementById('maxResultsSlider').value),
+                    relevance_threshold: parseFloat(document.getElementById('relevanceSlider').value),
+                    detail_level: parseInt(document.getElementById('detailSlider').value),
+                    output_format: document.getElementById('outputFormat').value,
+                    summary_length: document.getElementById('summaryLength').value
+                };
+
+                addLog(`Query: ${query}`, 'info');
+                addLog(`Parameters: Depth=${params.depth}, MaxResults=${params.max_results}`, 'info');
+
+                // Simulate research process
+                simulateResearch(params);
+
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+                updateStatus('error', 'Error');
+                stopResearch();
+            }
+        });
+
+        // Pause research
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isPaused = !isPaused;
+            const btn = document.getElementById('pauseBtn');
+            if (isPaused) {
+                updateStatus('idle', 'Paused');
+                btn.textContent = 'Resume';
+                addLog('Research paused', 'warning');
+            } else {
+                updateStatus('running', 'Running');
+                btn.textContent = 'Pause';
+                addLog('Research resumed', 'info');
+            }
+        });
+
+        // Stop research
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            stopResearch();
+            addLog('Research stopped by user', 'warning');
+        });
+
+        function stopResearch() {
+            isRunning = false;
+            isPaused = false;
+            updateStatus('idle', 'Idle');
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('pauseBtn').textContent = 'Pause';
+        }
+
+        // Simulate research (placeholder for real implementation)
+        async function simulateResearch(params) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const progressBar = document.getElementById('progressBar');
+            const totalSteps = params.max_results;
+            let currentStep = 0;
+
+            stats.totalQueries++;
+            const startTime = Date.now();
+
+            for (let i = 0; i < totalSteps && isRunning; i++) {
+                while (isPaused && isRunning) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                if (!isRunning) break;
+
+                currentStep++;
+                const progress = Math.round((currentStep / totalSteps) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}%`;
+
+                // Simulate finding a result
+                if (Math.random() > 0.3) {
+                    const resultCard = document.createElement('div');
+                    resultCard.className = 'result-card';
+                    resultCard.innerHTML = `
+                        <h4>Result ${currentStep}: Sample Finding</h4>
+                        <p><strong>Source:</strong> ${params.source_type}</p>
+                        <p><strong>Relevance:</strong> ${(Math.random() * 0.4 + 0.6).toFixed(2)}</p>
+                        <pre>This is a placeholder for actual research results.
+In a real implementation, this would contain:
+- Extracted content from web sources
+- Analysis and summary
+- Citations and references
+- Related topics and insights
+
+Query: ${params.query}
+Detail Level: ${params.detail_level}/10</pre>
+                    `;
+                    resultsContainer.insertBefore(resultCard, resultsContainer.firstChild);
+
+                    stats.totalResults++;
+                    addLog(`Found result ${currentStep}`, 'success');
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            if (isRunning) {
+                stats.processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+                stats.avgRelevance = Math.round(Math.random() * 30 + 70);
+                updateStatsDisplay();
+                addLog('Research completed successfully', 'success');
+                stopResearch();
+            }
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('totalQueries').textContent = stats.totalQueries;
+            document.getElementById('totalResults').textContent = stats.totalResults;
+            document.getElementById('avgRelevance').textContent = `${stats.avgRelevance}%`;
+            document.getElementById('processingTime').textContent = `${stats.processingTime}s`;
+        }
+
+        // Live parameter updates
+        function updateLiveParameters() {
+            const params = {
+                depth: document.getElementById('depthSlider').value,
+                maxResults: document.getElementById('maxResultsSlider').value,
+                relevance: document.getElementById('relevanceSlider').value,
+                detail: document.getElementById('detailSlider').value
+            };
+            addLog(`Parameters updated: Depth=${params.depth}, MaxResults=${params.maxResults}`, 'info');
+        }
+
+        // Export results
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const format = document.getElementById('outputFormat').value;
+            addLog(`Exporting results as ${format}...`, 'info');
+            alert(`Export functionality will save results as ${format} format`);
+        });
+
+        // Build content
+        document.getElementById('buildContentBtn').addEventListener('click', () => {
+            const contentType = document.getElementById('contentType').value;
+            const tone = document.getElementById('contentTone').value;
+
+            const builtContent = document.getElementById('builtContent');
+            builtContent.innerHTML = `
+                <div class="result-card">
+                    <h4>Generated ${contentType}</h4>
+                    <p><strong>Tone:</strong> ${tone}</p>
+                    <pre>This is a placeholder for the built content.
+In a real implementation, this would generate:
+- ${contentType} based on research results
+- Formatted in ${tone} tone
+- Structured and ready for use
+
+The content builder would analyze all gathered research
+and synthesize it into the requested format.</pre>
+                </div>
+            `;
+
+            addLog(`Built ${contentType} with ${tone} tone`, 'success');
+        });
+
+        // Initialize
+        addLog('Research & Content Gathering App loaded', 'success');
+    </script>
+</body>
+</html>
