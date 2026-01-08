@@ -14,14 +14,28 @@ A powerful, full-featured research and content gathering application with live p
 - **Configuration Management**: Save and load research configurations
 
 ### Multi-Platform Asset Generation
-Generate professional assets for multiple platforms:
+Generate professional assets for 11+ platforms:
+
+**Video & Content Platforms:**
 - **YouTube**: Video scripts, thumbnail templates, descriptions, SEO tags
+- **TikTok**: Video scripts with hooks, hashtags, engagement tactics
 - **Gumroad**: Product listings, pricing strategies, marketing copy
 - **Etsy**: Optimized product listings, tags, descriptions, SEO
-- **Websites**: Landing pages, blog posts, SEO elements
-- **Game Development**: Design documents, mechanics, story structures
+
+**Social Media Platforms:**
+- **Instagram**: Feed posts, Stories, Reels, Carousels with full specs
+- **Twitter/X**: Engaging threads, single tweets, timing strategies
+- **LinkedIn**: Professional posts, storytelling, listicles
+- **Pinterest**: Pin designs, SEO optimization, board strategies
+
+**Development & Design:**
+- **Websites**: Landing pages, blog posts, SEO elements, conversion optimization
+- **Game Development**: Complete design documents, mechanics, story structures
 - **Canva**: Template specifications, design guides, color palettes
-- **Multi-Platform Packages**: Generate complete asset sets for product launches
+
+**Campaign Tools:**
+- **Multi-Platform Packages**: Complete product launch assets
+- **Social Media Campaigns**: Cross-platform content strategies
 
 ### Web Interface Features
 - Beautiful, responsive UI with gradient design
@@ -31,9 +45,9 @@ Generate professional assets for multiple platforms:
 - Activity logging with timestamps
 - Statistics dashboard with quality metrics
 
-### MCP Tools (23+ Available)
+### MCP Tools (30+ Available)
 
-**Research Tools:**
+**Research Tools (14):**
 1. **start_research** - Start research with customizable parameters
 2. **get_research_status** - Check current task status and progress
 3. **pause_research** - Pause running research tasks
@@ -49,19 +63,25 @@ Generate professional assets for multiple platforms:
 13. **save_configuration** - Save research settings
 14. **load_configuration** - Load saved settings
 
-**Asset Generation Tools:**
-15. **generate_youtube_assets** - Create video scripts, thumbnails, descriptions
-16. **generate_gumroad_listing** - Generate product listings for Gumroad
-17. **generate_etsy_listing** - Create optimized Etsy product listings
-18. **generate_web_assets** - Build landing pages and blog templates
-19. **generate_game_assets** - Create game design documents
-20. **generate_canva_specs** - Generate Canva template specifications
-21. **list_platforms** - Show all supported platforms
-22. **generate_multi_platform_package** - Create complete asset packages
+**Platform Asset Tools (14):**
+15. **generate_youtube_assets** - Video scripts, thumbnails, descriptions, tags
+16. **generate_gumroad_listing** - Product listings for Gumroad
+17. **generate_etsy_listing** - Optimized Etsy product listings
+18. **generate_web_assets** - Landing pages and blog templates
+19. **generate_game_assets** - Game design documents
+20. **generate_canva_specs** - Canva template specifications
+21. **generate_instagram_assets** - Instagram posts, stories, reels, carousels
+22. **generate_tiktok_script** - TikTok video scripts and specs
+23. **generate_twitter_thread** - Twitter/X threads with engagement tactics
+24. **generate_linkedin_post** - Professional LinkedIn content
+25. **generate_pinterest_pin** - Pinterest pin designs and SEO
+26. **generate_social_campaign** - Multi-platform social media campaigns
+27. **list_platforms** - Show all supported platforms
+28. **generate_multi_platform_package** - Complete product launch packages
 
-**Prompts:**
-23. **research_prompt** - Generate research prompts
-24. **content_prompt** - Generate content creation prompts
+**Prompts (2):**
+29. **research_prompt** - Generate research prompts
+30. **content_prompt** - Generate content creation prompts
 
 ## Installation
 
@@ -69,7 +89,20 @@ Generate professional assets for multiple platforms:
 - Python 3.13+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) package manager
 
-### Setup
+### Quick Start
+
+Run the automated setup script:
+```bash
+./quickstart.sh
+```
+
+This will:
+- Install Python and dependencies
+- Create necessary directories
+- Validate all files
+- Show you how to get started
+
+### Manual Setup
 
 1. Clone the repository:
 ```bash
@@ -81,6 +114,11 @@ cd RIDICULOUS
 ```bash
 uv python install
 uv sync --locked
+```
+
+3. Create directories:
+```bash
+mkdir -p configs generated_assets social_campaigns
 ```
 
 ## Usage
@@ -222,12 +260,66 @@ blog = await generate_web_assets(
 )
 ```
 
+**Social Media Content:**
+```python
+# Instagram posts
+instagram = await generate_instagram_assets(
+    topic="Productivity Tips",
+    post_type="reel"  # or "feed", "story", "carousel"
+)
+
+# TikTok videos
+tiktok = await generate_tiktok_script(
+    topic="Coding Tutorial",
+    style="educational"  # or "entertainment", "tutorial"
+)
+
+# Twitter threads
+twitter = await generate_twitter_thread(
+    topic="AI Trends 2024"
+)
+
+# LinkedIn posts
+linkedin = await generate_linkedin_post(
+    topic="Career Growth",
+    post_type="storytelling"  # or "professional", "listicle"
+)
+
+# Pinterest pins
+pinterest = await generate_pinterest_pin(
+    topic="Home Decor Ideas",
+    pin_type="infographic"  # or "how_to", "product", "quote"
+)
+
+# Complete social campaign
+campaign = await generate_social_campaign(
+    topic="Product Launch",
+    platforms="instagram,tiktok,twitter,linkedin,pinterest",
+    save_to_file=True
+)
+```
+
 **Game Development:**
 ```python
 gdd = await generate_game_assets(
     game_name="Space Adventure",
     genre="action"
 )
+```
+
+### Running Examples
+
+Check out the example scripts:
+
+```bash
+# YouTube asset generation
+python3 examples/youtube_example.py
+
+# Social media campaign
+python3 examples/social_campaign_example.py
+
+# Complete product launch
+python3 examples/product_launch_example.py
 ```
 
 ### Testing with MCP Inspector
@@ -246,11 +338,19 @@ npx @modelcontextprotocol/inspector
 
 ```
 RIDICULOUS/
-├── main.py                  # MCP server with all tools and prompts
-├── research_engine.py       # Core research engine logic
+├── main.py                  # MCP server with 30+ tools
+├── research_engine.py       # Core research engine
+├── asset_generator.py       # Multi-platform asset generators
+├── quickstart.sh            # Quick setup script
 ├── static/
 │   └── index.html          # Web interface
+├── examples/                # Example usage scripts
+│   ├── youtube_example.py
+│   ├── social_campaign_example.py
+│   └── product_launch_example.py
 ├── configs/                 # Saved configurations (auto-created)
+├── generated_assets/        # Generated assets (auto-created)
+├── social_campaigns/        # Social campaigns (auto-created)
 ├── pyproject.toml          # Dependencies
 ├── uv.lock                 # Lock file
 └── README.md               # This file

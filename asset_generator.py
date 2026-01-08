@@ -731,6 +731,314 @@ class CanvaAssetGenerator:
         ]
 
 
+class SocialMediaAssetGenerator:
+    """Generate assets for social media platforms"""
+
+    def generate_instagram_post(self, topic: str, post_type: str = "feed") -> Dict[str, Any]:
+        """Generate Instagram post content"""
+        post_types = {
+            "feed": self._instagram_feed_post,
+            "story": self._instagram_story,
+            "reel": self._instagram_reel,
+            "carousel": self._instagram_carousel
+        }
+
+        generator = post_types.get(post_type, self._instagram_feed_post)
+        return generator(topic)
+
+    def _instagram_feed_post(self, topic: str) -> Dict[str, Any]:
+        return {
+            "caption": f"✨ {topic} ✨\n\nDiscover everything you need to know about {topic}!\n\n💡 Swipe for more insights\n📸 Tag a friend who needs this\n🔖 Save for later\n\n#{topic.replace(' ', '')} #instagood #viral #trending",
+            "image_specs": {
+                "dimensions": "1080x1080px (square) or 1080x1350px (portrait)",
+                "format": "JPG, PNG",
+                "aspect_ratio": "1:1 or 4:5"
+            },
+            "hashtags": self._generate_instagram_hashtags(topic),
+            "best_time_to_post": "Weekdays 11am-1pm, 7pm-9pm",
+            "engagement_tips": [
+                "Ask a question in the caption",
+                "Use 20-30 relevant hashtags",
+                "Tag relevant accounts",
+                "Post when your audience is most active",
+                "Include a call-to-action"
+            ]
+        }
+
+    def _instagram_story(self, topic: str) -> Dict[str, Any]:
+        return {
+            "content": f"Quick tip about {topic}! Swipe up to learn more →",
+            "dimensions": "1080x1920px",
+            "elements": [
+                "Eye-catching background",
+                "Clear, large text",
+                "Stickers or GIFs",
+                "Poll or question sticker",
+                "CTA with swipe up (if available)"
+            ],
+            "interactive_elements": [
+                f"Poll: Do you use {topic}? Yes/No",
+                f"Question: What's your experience with {topic}?",
+                f"Quiz: Test your {topic} knowledge!",
+                "Countdown to new content"
+            ]
+        }
+
+    def _instagram_reel(self, topic: str) -> Dict[str, Any]:
+        return {
+            "script": {
+                "hook": f"3 things you didn't know about {topic}",
+                "point_1": "First amazing fact...",
+                "point_2": "Second incredible insight...",
+                "point_3": "Third mind-blowing tip...",
+                "outro": "Follow for more!"
+            },
+            "duration": "15-30 seconds recommended",
+            "music": "Trending audio for better reach",
+            "dimensions": "1080x1920px",
+            "editing_tips": [
+                "Use trending sounds",
+                "Add captions for accessibility",
+                "Include transitions every 2-3 seconds",
+                "Use text overlays for key points",
+                "End with a strong CTA"
+            ],
+            "caption": f"Everything about {topic} in 30 seconds! 🎯\n\nWhich tip surprised you? 👇\n\n#{topic.replace(' ', '')} #reels #viral"
+        }
+
+    def _instagram_carousel(self, topic: str) -> Dict[str, Any]:
+        return {
+            "slides": [
+                {"title": "Cover", "content": f"The Ultimate {topic} Guide"},
+                {"title": "Slide 1", "content": f"What is {topic}?"},
+                {"title": "Slide 2", "content": "Why it matters"},
+                {"title": "Slide 3", "content": "How to get started"},
+                {"title": "Slide 4", "content": "Pro tips"},
+                {"title": "Slide 5", "content": "Common mistakes"},
+                {"title": "Slide 6", "content": "Resources"},
+                {"title": "CTA", "content": "Follow for more!"}
+            ],
+            "design_tips": [
+                "Maintain consistent branding",
+                "Use the same color palette",
+                "Number each slide",
+                "Include clear headings",
+                "End with a CTA slide"
+            ]
+        }
+
+    def _generate_instagram_hashtags(self, topic: str) -> List[str]:
+        return [
+            f"#{topic.replace(' ', '').lower()}",
+            "#instagood", "#photooftheday", "#instagram",
+            "#follow", "#like", "#viral", "#trending",
+            "#explorepage", "#fyp", "#reels", "#content"
+        ]
+
+    def generate_tiktok_video(self, topic: str, style: str = "educational") -> Dict[str, Any]:
+        """Generate TikTok video script and specs"""
+        return {
+            "script": self._tiktok_script(topic, style),
+            "duration": "15-60 seconds (30s is sweet spot)",
+            "video_specs": {
+                "dimensions": "1080x1920px or 1080x1350px",
+                "format": "MP4",
+                "fps": "30 or 60"
+            },
+            "hooks": [
+                f"Wait until you hear about {topic}...",
+                f"I can't believe nobody talks about {topic}",
+                f"If you don't know about {topic}, watch this",
+                "POV: You just discovered...",
+                "This changed everything..."
+            ],
+            "captions": f"Learn about {topic} in 30 seconds! 🎯 #fyp #{topic.replace(' ', '')} #viral #learnontiktok",
+            "sounds": "Use trending sounds for better reach",
+            "hashtags": ["#fyp", "#foryou", "#viral", "#trending", f"#{topic.replace(' ', '').lower()}"],
+            "engagement_tactics": [
+                "Ask viewers to comment their thoughts",
+                "Use trending challenges",
+                "Duet or stitch popular videos",
+                "Post 1-3 times daily",
+                "Reply to comments with videos"
+            ]
+        }
+
+    def _tiktok_script(self, topic: str, style: str) -> Dict[str, str]:
+        scripts = {
+            "educational": {
+                "0-3s": f"Let me teach you about {topic}",
+                "3-10s": "Here's what you need to know...",
+                "10-25s": "The key points are...",
+                "25-30s": "Try this yourself!"
+            },
+            "entertainment": {
+                "0-3s": f"You won't believe this about {topic}!",
+                "3-15s": "So basically...",
+                "15-28s": "And that's why...",
+                "28-30s": "Mind = blown 🤯"
+            },
+            "tutorial": {
+                "0-3s": f"How to master {topic}",
+                "3-8s": "Step 1:",
+                "8-15s": "Step 2:",
+                "15-22s": "Step 3:",
+                "22-30s": "Now you know!"
+            }
+        }
+        return scripts.get(style, scripts["educational"])
+
+    def generate_twitter_thread(self, topic: str) -> Dict[str, Any]:
+        """Generate Twitter/X thread"""
+        return {
+            "thread": [
+                f"🧵 Let's talk about {topic}\n\nA thread on everything you need to know:",
+                f"1/ First, what is {topic}?\n\nIt's [definition and context]",
+                f"2/ Why {topic} matters:\n\n• Benefit 1\n• Benefit 2\n• Benefit 3",
+                f"3/ Here's how {topic} works:\n\n[Brief explanation with an example]",
+                f"4/ Common mistakes people make with {topic}:\n\n❌ Mistake 1\n❌ Mistake 2\n✅ Do this instead",
+                f"5/ Pro tips for {topic}:\n\n💡 Tip 1\n💡 Tip 2\n💡 Tip 3",
+                f"6/ Resources to learn more about {topic}:\n\n• Resource 1\n• Resource 2\n• Resource 3",
+                "7/ That's it!\n\nIf you found this helpful:\n• Like this tweet\n• Retweet the first one\n• Follow me for more"
+            ],
+            "single_tweet_format": f"Quick tip about {topic}:\n\n[Value-packed insight in under 280 chars]\n\nLike/RT if helpful! 🔁",
+            "tweet_specs": {
+                "character_limit": 280,
+                "media": "Images: 1-4, Video: up to 2:20, GIF: supported"
+            },
+            "hashtag_strategy": "Use 1-2 relevant hashtags max",
+            "timing": "Best times: Weekdays 8-10am, 12pm, 5-6pm",
+            "engagement_tips": [
+                "Ask questions to encourage replies",
+                "Quote tweet others with your take",
+                "Use polls for engagement",
+                "Reply to comments quickly",
+                "Thread starter should have strong hook"
+            ]
+        }
+
+    def generate_linkedin_post(self, topic: str, post_type: str = "professional") -> Dict[str, Any]:
+        """Generate LinkedIn content"""
+        templates = {
+            "professional": f"""Thoughts on {topic}:
+
+After working in this space for [X years], here's what I've learned:
+
+1. [Key insight #1]
+2. [Key insight #2]
+3. [Key insight #3]
+
+The biggest surprise? [Unexpected finding]
+
+What's your experience with {topic}? I'd love to hear your thoughts.
+
+#{topic.replace(' ', '')} #ProfessionalDevelopment #Industry #Insights""",
+
+            "storytelling": f"""I'll never forget the day I discovered {topic}.
+
+[Opening hook - start with a relatable problem]
+
+Here's what happened:
+
+→ [Challenge faced]
+→ [How {topic} helped]
+→ [The transformation]
+
+Key takeaways:
+• [Lesson 1]
+• [Lesson 2]
+• [Lesson 3]
+
+Have you experienced something similar?
+
+#{topic.replace(' ', '')} #CareerGrowth #Leadership""",
+
+            "listicle": f"""5 things I wish I knew about {topic} earlier:
+
+1. [Point 1 with brief explanation]
+
+2. [Point 2 with brief explanation]
+
+3. [Point 3 with brief explanation]
+
+4. [Point 4 with brief explanation]
+
+5. [Point 5 with brief explanation]
+
+Which resonates with you most?
+
+#{topic.replace(' ', '')} #ProfessionalTips"""
+        }
+
+        return {
+            "post": templates.get(post_type, templates["professional"]),
+            "image_specs": {
+                "dimensions": "1200x627px (recommended)",
+                "format": "PNG or JPG"
+            },
+            "best_practices": [
+                "Post during business hours (Tue-Thu 9am-12pm best)",
+                "Use 3-5 relevant hashtags",
+                "Tag relevant people/companies",
+                "Ask questions to drive engagement",
+                "Add a document/carousel for more reach",
+                "Use line breaks for readability",
+                "Share personal insights, not just facts"
+            ],
+            "content_ideas": [
+                "Share lessons learned",
+                "Industry insights and trends",
+                "Behind-the-scenes at work",
+                "Career advice and tips",
+                "Celebrate team wins",
+                "Ask for community input"
+            ]
+        }
+
+    def generate_pinterest_pin(self, topic: str, pin_type: str = "infographic") -> Dict[str, Any]:
+        """Generate Pinterest pin design specs"""
+        return {
+            "title": f"Ultimate Guide to {topic}",
+            "description": f"Discover everything about {topic}! Save this pin for easy reference. Click to learn more about {topic} and get expert tips. #{topic.replace(' ', '')} #Pinterest #DIY #Tips",
+            "image_specs": {
+                "dimensions": "1000x1500px (2:3 ratio - most popular)",
+                "alternative_sizes": ["1080x1920px (9:16)", "1000x2000px (long pin)"],
+                "format": "PNG or JPG",
+                "file_size": "Under 20MB"
+            },
+            "design_elements": {
+                "title_overlay": "Large, readable text at top",
+                "branding": "Logo or watermark",
+                "color_scheme": "Bright, eye-catching colors",
+                "layout": "Vertical with clear hierarchy",
+                "text": "Include benefit-driven copy"
+            },
+            "pin_types": {
+                "infographic": "Visual data representation",
+                "how_to": "Step-by-step tutorial",
+                "product": "Product showcase",
+                "quote": "Inspirational quote graphic",
+                "checklist": "Printable checklist",
+                "recipe": "Recipe card (if applicable)"
+            },
+            "seo_optimization": {
+                "title": f"Include keyword: {topic}",
+                "description": f"Use keywords naturally, mention {topic} 2-3 times",
+                "board_name": f"Choose relevant board about {topic}",
+                "alt_text": f"Descriptive alt text with {topic}"
+            },
+            "best_practices": [
+                "Pin consistently (5-30 pins/day)",
+                "Use rich pins when possible",
+                "Join group boards in your niche",
+                "Link to high-quality landing pages",
+                "Create seasonal content",
+                "Vertical pins perform best",
+                "Add your branding/logo"
+            ]
+        }
+
+
 class AssetGeneratorManager:
     """Main manager for all asset generators"""
 
@@ -741,6 +1049,7 @@ class AssetGeneratorManager:
         self.web = WebAssetGenerator()
         self.game = GameAssetGenerator()
         self.canva = CanvaAssetGenerator()
+        self.social = SocialMediaAssetGenerator()
 
     def generate_asset(self, platform: str, asset_type: str, **kwargs) -> Dict[str, Any]:
         """Generate asset for specified platform"""
@@ -750,7 +1059,13 @@ class AssetGeneratorManager:
             "etsy": self.etsy,
             "web": self.web,
             "game": self.game,
-            "canva": self.canva
+            "canva": self.canva,
+            "social": self.social,
+            "instagram": self.social,
+            "tiktok": self.social,
+            "twitter": self.social,
+            "linkedin": self.social,
+            "pinterest": self.social
         }
 
         generator = generators.get(platform.lower())
@@ -767,7 +1082,7 @@ class AssetGeneratorManager:
 
     def get_available_platforms(self) -> List[str]:
         """Get list of supported platforms"""
-        return ["youtube", "gumroad", "etsy", "web", "game", "canva"]
+        return ["youtube", "gumroad", "etsy", "web", "game", "canva", "instagram", "tiktok", "twitter", "linkedin", "pinterest"]
 
     def get_asset_types(self, platform: str) -> List[str]:
         """Get available asset types for a platform"""
@@ -777,6 +1092,11 @@ class AssetGeneratorManager:
             "etsy": ["product_listing"],
             "web": ["landing_page", "blog_post_template"],
             "game": ["game_design_document"],
-            "canva": ["template_specs"]
+            "canva": ["template_specs"],
+            "instagram": ["instagram_post"],
+            "tiktok": ["tiktok_video"],
+            "twitter": ["twitter_thread"],
+            "linkedin": ["linkedin_post"],
+            "pinterest": ["pinterest_pin"]
         }
         return asset_types.get(platform.lower(), [])

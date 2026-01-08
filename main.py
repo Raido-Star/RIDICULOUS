@@ -745,6 +745,192 @@ def generate_multi_platform_package(
         return json.dumps({"status": "error", "message": str(e)})
 
 
+# Social Media Asset Tools
+@mcp.tool(
+    title="Generate Instagram Assets",
+    description="Generate Instagram content (posts, stories, reels, carousels)"
+)
+def generate_instagram_assets(
+    topic: str = Field(description="Post topic or subject"),
+    post_type: str = Field(default="feed", description="Post type: feed, story, reel, carousel")
+) -> str:
+    """Generate Instagram content"""
+    global asset_manager
+
+    try:
+        result = asset_manager.social.generate_instagram_post(topic, post_type)
+        return json.dumps({
+            "status": "success",
+            "platform": "instagram",
+            "post_type": post_type,
+            "topic": topic,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate TikTok Video Script",
+    description="Generate TikTok video script and specifications"
+)
+def generate_tiktok_script(
+    topic: str = Field(description="Video topic"),
+    style: str = Field(default="educational", description="Style: educational, entertainment, tutorial")
+) -> str:
+    """Generate TikTok video content"""
+    global asset_manager
+
+    try:
+        result = asset_manager.social.generate_tiktok_video(topic, style)
+        return json.dumps({
+            "status": "success",
+            "platform": "tiktok",
+            "topic": topic,
+            "style": style,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Twitter Thread",
+    description="Generate Twitter/X thread with engagement tactics"
+)
+def generate_twitter_thread(
+    topic: str = Field(description="Thread topic")
+) -> str:
+    """Generate Twitter thread"""
+    global asset_manager
+
+    try:
+        result = asset_manager.social.generate_twitter_thread(topic)
+        return json.dumps({
+            "status": "success",
+            "platform": "twitter",
+            "topic": topic,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate LinkedIn Post",
+    description="Generate LinkedIn professional content"
+)
+def generate_linkedin_post(
+    topic: str = Field(description="Post topic"),
+    post_type: str = Field(default="professional", description="Type: professional, storytelling, listicle")
+) -> str:
+    """Generate LinkedIn post"""
+    global asset_manager
+
+    try:
+        result = asset_manager.social.generate_linkedin_post(topic, post_type)
+        return json.dumps({
+            "status": "success",
+            "platform": "linkedin",
+            "topic": topic,
+            "post_type": post_type,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Pinterest Pin",
+    description="Generate Pinterest pin design and SEO specs"
+)
+def generate_pinterest_pin(
+    topic: str = Field(description="Pin topic"),
+    pin_type: str = Field(default="infographic", description="Pin type: infographic, how_to, product, quote")
+) -> str:
+    """Generate Pinterest pin specifications"""
+    global asset_manager
+
+    try:
+        result = asset_manager.social.generate_pinterest_pin(topic, pin_type)
+        return json.dumps({
+            "status": "success",
+            "platform": "pinterest",
+            "topic": topic,
+            "pin_type": pin_type,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Social Media Campaign",
+    description="Generate complete social media campaign across multiple platforms"
+)
+def generate_social_campaign(
+    topic: str = Field(description="Campaign topic"),
+    platforms: str = Field(default="instagram,tiktok,twitter", description="Comma-separated platforms"),
+    save_to_file: bool = Field(default=False, description="Save results to file")
+) -> str:
+    """Generate multi-platform social media campaign"""
+    global asset_manager
+
+    try:
+        platform_list = [p.strip().lower() for p in platforms.split(",")]
+        campaign = {
+            "topic": topic,
+            "platforms": {}
+        }
+
+        for platform in platform_list:
+            if platform == "instagram":
+                campaign["platforms"]["instagram"] = {
+                    "feed_post": asset_manager.social.generate_instagram_post(topic, "feed"),
+                    "story": asset_manager.social.generate_instagram_post(topic, "story"),
+                    "reel": asset_manager.social.generate_instagram_post(topic, "reel")
+                }
+            elif platform == "tiktok":
+                campaign["platforms"]["tiktok"] = asset_manager.social.generate_tiktok_video(topic, "educational")
+            elif platform == "twitter":
+                campaign["platforms"]["twitter"] = asset_manager.social.generate_twitter_thread(topic)
+            elif platform == "linkedin":
+                campaign["platforms"]["linkedin"] = asset_manager.social.generate_linkedin_post(topic, "professional")
+            elif platform == "pinterest":
+                campaign["platforms"]["pinterest"] = asset_manager.social.generate_pinterest_pin(topic, "infographic")
+
+        if save_to_file:
+            output_dir = Path("social_campaigns")
+            output_dir.mkdir(exist_ok=True)
+            output_file = output_dir / f"{topic.replace(' ', '_')}_campaign.json"
+            output_file.write_text(json.dumps(campaign, indent=2))
+
+            return json.dumps({
+                "status": "success",
+                "message": "Social media campaign generated",
+                "topic": topic,
+                "platforms": platform_list,
+                "saved_to": str(output_file.absolute()),
+                "campaign": campaign
+            }, indent=2)
+
+        return json.dumps({
+            "status": "success",
+            "message": "Social media campaign generated",
+            "topic": topic,
+            "platforms": platform_list,
+            "campaign": campaign
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
 # Prompts
 @mcp.prompt("research_prompt")
 def research_prompt(
