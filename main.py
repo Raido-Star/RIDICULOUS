@@ -1078,6 +1078,7 @@ Please create engaging, well-structured content that effectively communicates th
 
 if __name__ == "__main__":
     print("Starting Research & Content Gathering Server...")
-    print("Web interface will be available at: http://127.0.0.1:3000/")
-    print("\nTo access the web UI, open: http://127.0.0.1:3000/static/index.html")
+    print("Server will be available at: http://127.0.0.1:8000/")
+    print("\nTo access the web UI, open: http://127.0.0.1:8000/static/index.html")
+    print("MCP endpoint: http://127.0.0.1:8000/mcp")
     mcp.run(transport="streamable-http")
