@@ -1039,6 +1039,328 @@ Which resonates with you most?
         }
 
 
+class AudioAssetGenerator:
+    """Generate audio content assets (beats, voiceovers, podcasts)"""
+
+    def generate_beat_specs(self, genre: str = "hiphop", mood: str = "energetic") -> Dict[str, Any]:
+        """Generate beat/music specifications"""
+        return {
+            "genre": genre,
+            "mood": mood,
+            "specifications": {
+                "tempo_bpm": self._get_tempo_for_genre(genre),
+                "key": self._suggest_key(mood),
+                "time_signature": "4/4",
+                "structure": self._get_beat_structure(genre),
+                "instrumentation": self._get_instrumentation(genre),
+                "mixing_notes": [
+                    "Kick and bass should be tight and punchy",
+                    "Use sidechain compression on bass to kick",
+                    "Layer hi-hats for depth",
+                    "Add subtle reverb to snares",
+                    "EQ to prevent frequency clashing"
+                ]
+            },
+            "production_tips": [
+                f"Start with a strong {genre} drum pattern",
+                f"Keep the {mood} vibe with melody choices",
+                "Add variation every 8-16 bars",
+                "Build tension before drops",
+                "Leave space for vocals if needed"
+            ],
+            "recommended_software": [
+                "FL Studio",
+                "Ableton Live",
+                "Logic Pro X",
+                "Pro Tools",
+                "GarageBand (for beginners)"
+            ],
+            "sample_packs": [
+                f"{genre.title()} Drum Kit 2024",
+                "808 Bass Collection",
+                "Melody Loops Pack",
+                "FX and Transitions"
+            ],
+            "export_settings": {
+                "format": "WAV (24-bit, 44.1kHz) or MP3 (320kbps)",
+                "normalize": "True",
+                "dither": "Apply if converting to 16-bit"
+            }
+        }
+
+    def _get_tempo_for_genre(self, genre: str) -> Dict[str, Any]:
+        tempos = {
+            "hiphop": {"min": 80, "max": 100, "typical": 90},
+            "trap": {"min": 130, "max": 160, "typical": 140},
+            "edm": {"min": 120, "max": 130, "typical": 128},
+            "pop": {"min": 100, "max": 130, "typical": 120},
+            "lofi": {"min": 70, "max": 90, "typical": 80},
+            "drill": {"min": 130, "max": 150, "typical": 140},
+            "afrobeat": {"min": 100, "max": 120, "typical": 110},
+            "reggaeton": {"min": 90, "max": 100, "typical": 95}
+        }
+        return tempos.get(genre.lower(), {"min": 100, "max": 140, "typical": 120})
+
+    def _suggest_key(self, mood: str) -> str:
+        mood_keys = {
+            "energetic": "D Minor or E Minor",
+            "chill": "C Major or G Major",
+            "dark": "A Minor or D Minor",
+            "happy": "C Major or F Major",
+            "melancholic": "A Minor or E Minor",
+            "aggressive": "E Minor or B Minor"
+        }
+        return mood_keys.get(mood.lower(), "C Minor")
+
+    def _get_beat_structure(self, genre: str) -> List[str]:
+        structures = {
+            "hiphop": ["Intro (4 bars)", "Verse (16 bars)", "Hook (8 bars)", "Verse (16 bars)", "Hook (8 bars)", "Bridge (8 bars)", "Outro (4 bars)"],
+            "trap": ["Intro (8 bars)", "Verse (16 bars)", "Pre-Hook (4 bars)", "Hook (8 bars)", "Verse (16 bars)", "Hook (8 bars)", "Outro (8 bars)"],
+            "edm": ["Intro (16 bars)", "Build (16 bars)", "Drop (32 bars)", "Break (16 bars)", "Build (16 bars)", "Drop (32 bars)", "Outro (16 bars)"],
+            "pop": ["Intro (8 bars)", "Verse (16 bars)", "Pre-Chorus (8 bars)", "Chorus (16 bars)", "Verse (16 bars)", "Chorus (16 bars)", "Bridge (8 bars)", "Chorus (16 bars)", "Outro (8 bars)"]
+        }
+        return structures.get(genre.lower(), ["Intro", "Main Section", "Outro"])
+
+    def _get_instrumentation(self, genre: str) -> List[str]:
+        instruments = {
+            "hiphop": ["Kick drum", "Snare", "Hi-hats", "808 Bass", "Piano/Keys", "Strings", "Vocal samples"],
+            "trap": ["Kick", "Snare/Clap", "Hi-hats (rolls)", "808 Bass", "Synth leads", "FX/Risers", "Vocal chops"],
+            "edm": ["Kick", "Snare", "Hi-hats", "Sub bass", "Lead synths", "Pads", "FX", "Risers", "Impacts"],
+            "lofi": ["Kick", "Snare (dusty)", "Hi-hats", "Bass", "Piano", "Jazz samples", "Vinyl crackle", "Rain sounds"]
+        }
+        return instruments.get(genre.lower(), ["Drums", "Bass", "Melody", "FX"])
+
+    def generate_voiceover_script(self, content_type: str = "commercial", duration: int = 30) -> Dict[str, Any]:
+        """Generate voiceover script and specifications"""
+        return {
+            "content_type": content_type,
+            "duration_seconds": duration,
+            "script": self._create_voiceover_script(content_type, duration),
+            "voice_specifications": {
+                "gender": "Male/Female (choose based on brand)",
+                "age_range": self._get_age_range(content_type),
+                "accent": "Neutral or Regional (based on target audience)",
+                "tone": self._get_tone(content_type),
+                "pace": self._get_pace(content_type),
+                "emotion": self._get_emotion(content_type)
+            },
+            "technical_specs": {
+                "format": "WAV or MP3",
+                "sample_rate": "48kHz (video) or 44.1kHz (audio)",
+                "bit_depth": "24-bit",
+                "channels": "Mono (preferred for voice)",
+                "noise_floor": "-60dB or lower",
+                "peak_level": "-6dB to -3dB"
+            },
+            "recording_tips": [
+                "Use a quality condenser microphone",
+                "Record in a treated/quiet room",
+                "Maintain consistent distance from mic (6-12 inches)",
+                "Use a pop filter to reduce plosives",
+                "Record at 24-bit for maximum quality",
+                "Do multiple takes for best results",
+                "Leave room tone for editing"
+            ],
+            "post_production": [
+                "EQ: High-pass filter at 80Hz",
+                "Compression: Moderate (3:1 ratio)",
+                "De-essing: Remove harsh 's' sounds",
+                "Normalization: Peak at -3dB",
+                "Noise reduction: If needed",
+                "Add subtle reverb for depth (optional)"
+            ],
+            "delivery_formats": [
+                "WAV (uncompressed for editing)",
+                "MP3 320kbps (for distribution)",
+                "AAC (for video platforms)"
+            ]
+        }
+
+    def _create_voiceover_script(self, content_type: str, duration: int) -> str:
+        scripts = {
+            "commercial": f"""[0:00-0:05] Hook: Attention-grabbing opening
+[0:05-0:{duration-10}] Main Message: Product/service benefits
+[0:{duration-10}-0:{duration}] Call-to-Action: Clear next step
+
+Example ({duration}s commercial):
+"Tired of [problem]? Introducing [product name] - the solution you've been waiting for.
+With [key benefit], [another benefit], and [third benefit], you'll [result].
+Get yours today at [website] and transform your [area]. Limited time offer!"
+""",
+
+            "explainer": f"""[Introduction] What is this about?
+[Problem] What problem does it solve?
+[Solution] How does it work?
+[Benefits] Why choose this?
+[CTA] What to do next
+
+Duration: {duration} seconds
+Word count: Approximately {duration * 2.5} words (at 150 wpm)
+""",
+
+            "tutorial": f"""[Intro] Welcome and overview
+[Step 1] First action
+[Step 2] Second action
+[Step 3] Third action
+[Conclusion] Recap and next steps
+
+Keep it clear, concise, and actionable.
+Duration: {duration} seconds
+""",
+
+            "podcast_intro": """[Music fades in]
+Welcome to [Podcast Name], the show where we [podcast description].
+I'm your host, [Name], and today we're [episode topic].
+[Optional: Co-host intro or guest intro]
+Let's dive in!
+[Music fades out]
+""",
+
+            "audiobook": """[Chapter opening]
+Chapter [Number]: [Title]
+
+[Narrative content]
+
+Maintain consistent pacing, clear pronunciation, and appropriate emotion for the content.
+Duration varies by chapter length.
+"""
+        }
+        return scripts.get(content_type, f"Custom {content_type} script - {duration} seconds")
+
+    def _get_age_range(self, content_type: str) -> str:
+        ranges = {
+            "commercial": "25-45 (authoritative)",
+            "explainer": "30-50 (professional)",
+            "tutorial": "25-40 (friendly)",
+            "podcast_intro": "25-55 (conversational)",
+            "audiobook": "35-60 (narrator quality)"
+        }
+        return ranges.get(content_type, "25-50")
+
+    def _get_tone(self, content_type: str) -> str:
+        tones = {
+            "commercial": "Confident and persuasive",
+            "explainer": "Clear and informative",
+            "tutorial": "Friendly and helpful",
+            "podcast_intro": "Warm and engaging",
+            "audiobook": "Expressive and dynamic"
+        }
+        return tones.get(content_type, "Professional")
+
+    def _get_pace(self, content_type: str) -> str:
+        paces = {
+            "commercial": "Medium-fast (150-160 wpm)",
+            "explainer": "Medium (140-150 wpm)",
+            "tutorial": "Slow-medium (130-140 wpm)",
+            "podcast_intro": "Medium (140-150 wpm)",
+            "audiobook": "Medium-slow (140-160 wpm)"
+        }
+        return paces.get(content_type, "Medium (140-150 wpm)")
+
+    def _get_emotion(self, content_type: str) -> str:
+        emotions = {
+            "commercial": "Excited and enthusiastic",
+            "explainer": "Calm and reassuring",
+            "tutorial": "Patient and encouraging",
+            "podcast_intro": "Energetic and welcoming",
+            "audiobook": "Varies with content"
+        }
+        return emotions.get(content_type, "Neutral professional")
+
+    def generate_podcast_assets(self, podcast_name: str, episode_topic: str) -> Dict[str, Any]:
+        """Generate complete podcast production assets"""
+        return {
+            "podcast_name": podcast_name,
+            "episode_topic": episode_topic,
+            "intro_script": f"""[Music: 0:00-0:05]
+Welcome to {podcast_name}!
+[Music fades down]
+I'm your host, and today we're diving into {episode_topic}.
+[Music out]
+""",
+            "outro_script": f"""That's all for today's episode on {episode_topic}.
+If you enjoyed this, subscribe to {podcast_name} and leave us a review!
+Join us next time for more great content.
+[Music fades in]
+Thanks for listening!
+[Music to end]
+""",
+            "audio_specs": {
+                "format": "MP3 or AAC",
+                "bitrate": "128-192 kbps (good quality, smaller file)",
+                "sample_rate": "44.1kHz",
+                "channels": "Stereo",
+                "loudness": "-16 LUFS (podcast standard)",
+                "true_peak": "-1dB"
+            },
+            "music_recommendations": {
+                "intro_music": "15-30 seconds, upbeat and branded",
+                "outro_music": "20-45 seconds, memorable",
+                "transition_music": "5-10 seconds between segments",
+                "background_music": "Subtle, 20-30dB below voice"
+            },
+            "editing_checklist": [
+                "Remove long pauses and filler words",
+                "Balance audio levels across speakers",
+                "Add intro and outro music",
+                "Insert chapter markers for long episodes",
+                "Normalize loudness to -16 LUFS",
+                "Export with metadata (title, artist, album art)"
+            ],
+            "distribution_platforms": [
+                "Spotify",
+                "Apple Podcasts",
+                "Google Podcasts",
+                "YouTube (video format)",
+                "Anchor/Spotify for Podcasters",
+                "Amazon Music",
+                "iHeartRadio"
+            ],
+            "episode_artwork": {
+                "dimensions": "3000x3000px (minimum 1400x1400)",
+                "format": "JPG or PNG",
+                "file_size": "Under 500KB",
+                "content": "Episode title, number, and key visual"
+            }
+        }
+
+    def generate_audio_ad_script(self, product: str, duration: int = 15) -> Dict[str, Any]:
+        """Generate audio advertisement script"""
+        return {
+            "product": product,
+            "duration_seconds": duration,
+            "scripts": {
+                "15_second": f"""[SFX: Attention grabber]
+{product} - [Key benefit in 5 words].
+Visit [website] today!
+[SFX: Brand sound/music sting]""",
+
+                "30_second": f"""[Music bed starts]
+Are you [pain point]?
+{product} is here to help!
+With [benefit 1], [benefit 2], and [benefit 3],
+you'll [desired outcome].
+Don't wait - visit [website] or call [number] today!
+[Music up and out]""",
+
+                "60_second": f"""[Music intro: 0:00-0:05]
+Picture this: [Scenario/story opening]
+[0:05-0:15] That's where {product} comes in.
+[0:15-0:35] Unlike [competitor/old way], {product} gives you [unique benefits].
+[0:35-0:50] Thousands of customers have already [social proof/results].
+[0:50-0:60] Ready to experience the difference? Visit [website] or call [number].
+Limited time offer - act now!
+[Music outro]"""
+            },
+            "production_notes": {
+                "music_bed": "Upbeat, relevant to brand",
+                "sfx": "Strategic use for attention",
+                "voice_direction": "Enthusiastic but not overselling",
+                "call_to_action": "Clear and memorable"
+            }
+        }
+
+
 class AssetGeneratorManager:
     """Main manager for all asset generators"""
 
@@ -1050,6 +1372,7 @@ class AssetGeneratorManager:
         self.game = GameAssetGenerator()
         self.canva = CanvaAssetGenerator()
         self.social = SocialMediaAssetGenerator()
+        self.audio = AudioAssetGenerator()
 
     def generate_asset(self, platform: str, asset_type: str, **kwargs) -> Dict[str, Any]:
         """Generate asset for specified platform"""
@@ -1065,7 +1388,11 @@ class AssetGeneratorManager:
             "tiktok": self.social,
             "twitter": self.social,
             "linkedin": self.social,
-            "pinterest": self.social
+            "pinterest": self.social,
+            "audio": self.audio,
+            "podcast": self.audio,
+            "music": self.audio,
+            "voiceover": self.audio
         }
 
         generator = generators.get(platform.lower())
@@ -1082,7 +1409,7 @@ class AssetGeneratorManager:
 
     def get_available_platforms(self) -> List[str]:
         """Get list of supported platforms"""
-        return ["youtube", "gumroad", "etsy", "web", "game", "canva", "instagram", "tiktok", "twitter", "linkedin", "pinterest"]
+        return ["youtube", "gumroad", "etsy", "web", "game", "canva", "instagram", "tiktok", "twitter", "linkedin", "pinterest", "audio", "podcast", "music", "voiceover"]
 
     def get_asset_types(self, platform: str) -> List[str]:
         """Get available asset types for a platform"""
@@ -1097,6 +1424,10 @@ class AssetGeneratorManager:
             "tiktok": ["tiktok_video"],
             "twitter": ["twitter_thread"],
             "linkedin": ["linkedin_post"],
-            "pinterest": ["pinterest_pin"]
+            "pinterest": ["pinterest_pin"],
+            "audio": ["beat_specs", "voiceover_script", "podcast_assets", "audio_ad_script"],
+            "podcast": ["podcast_assets"],
+            "music": ["beat_specs"],
+            "voiceover": ["voiceover_script", "audio_ad_script"]
         }
         return asset_types.get(platform.lower(), [])

@@ -931,6 +931,107 @@ def generate_social_campaign(
         return json.dumps({"status": "error", "message": str(e)})
 
 
+# Audio Content Tools
+@mcp.tool(
+    title="Generate Beat/Music Specifications",
+    description="Generate professional beat and music production specs"
+)
+def generate_beat_specs(
+    genre: str = Field(default="hiphop", description="Music genre: hiphop, trap, edm, pop, lofi, drill, afrobeat, reggaeton"),
+    mood: str = Field(default="energetic", description="Mood: energetic, chill, dark, happy, melancholic, aggressive")
+) -> str:
+    """Generate beat and music specifications"""
+    global asset_manager
+
+    try:
+        result = asset_manager.audio.generate_beat_specs(genre, mood)
+        return json.dumps({
+            "status": "success",
+            "platform": "audio/music",
+            "genre": genre,
+            "mood": mood,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Voiceover Script",
+    description="Generate voiceover script with professional specifications"
+)
+def generate_voiceover_script(
+    content_type: str = Field(default="commercial", description="Type: commercial, explainer, tutorial, podcast_intro, audiobook"),
+    duration: int = Field(default=30, description="Duration in seconds")
+) -> str:
+    """Generate voiceover script and technical specs"""
+    global asset_manager
+
+    try:
+        result = asset_manager.audio.generate_voiceover_script(content_type, duration)
+        return json.dumps({
+            "status": "success",
+            "platform": "audio/voiceover",
+            "content_type": content_type,
+            "duration": duration,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Podcast Assets",
+    description="Generate complete podcast production package"
+)
+def generate_podcast_assets(
+    podcast_name: str = Field(description="Name of the podcast"),
+    episode_topic: str = Field(description="Episode topic or title")
+) -> str:
+    """Generate podcast intro, outro, and production specs"""
+    global asset_manager
+
+    try:
+        result = asset_manager.audio.generate_podcast_assets(podcast_name, episode_topic)
+        return json.dumps({
+            "status": "success",
+            "platform": "podcast",
+            "podcast_name": podcast_name,
+            "episode_topic": episode_topic,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Generate Audio Advertisement",
+    description="Generate audio ad script for radio/podcast"
+)
+def generate_audio_ad(
+    product: str = Field(description="Product or service name"),
+    duration: int = Field(default=30, description="Duration: 15, 30, or 60 seconds")
+) -> str:
+    """Generate audio advertisement script"""
+    global asset_manager
+
+    try:
+        result = asset_manager.audio.generate_audio_ad_script(product, duration)
+        return json.dumps({
+            "status": "success",
+            "platform": "audio/advertising",
+            "product": product,
+            "duration": duration,
+            "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
 # Prompts
 @mcp.prompt("research_prompt")
 def research_prompt(
