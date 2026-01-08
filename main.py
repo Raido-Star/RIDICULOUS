@@ -17,6 +17,23 @@ from research_engine import (
     ResearchResult
 )
 from asset_generator import AssetGeneratorManager
+from intelligence_engine import (
+    IntelligenceEngine,
+    SemanticSearchEngine,
+    SourceCredibilityScorer,
+    KnowledgeGraphGenerator,
+    SmartQueryExpander,
+    ResearchSessionManager
+)
+from osint_engine import (
+    OSINTEngine,
+    SocialNetworkAnalyzer,
+    DigitalFootprintTracker,
+    TimelineAnalyzer,
+    SentimentTrendAnalyzer,
+    GeospatialAnalyzer,
+    PatternRecognitionEngine
+)
 
 # Initialize MCP server
 mcp = FastMCP("Research & Content Gathering Server", stateless_http=True)
@@ -27,6 +44,12 @@ current_task: Optional[asyncio.Task] = None
 
 # Global asset generator instance
 asset_manager = AssetGeneratorManager()
+
+# Global intelligence engine instance
+intelligence_engine = IntelligenceEngine()
+
+# Global OSINT engine instance
+osint_engine = OSINTEngine()
 
 
 # Serve static files
@@ -1026,6 +1049,459 @@ def generate_audio_ad(
             "product": product,
             "duration": duration,
             "result": result
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+# Intelligence Engine Tools
+@mcp.tool(
+    title="Semantic Search",
+    description="Perform semantic search using TF-IDF and cosine similarity"
+)
+def semantic_search(
+    query: str = Field(description="Search query"),
+    top_k: int = Field(default=10, description="Number of results to return")
+) -> str:
+    """Semantic search across research results"""
+    global engine, intelligence_engine
+
+    if not engine.results:
+        return json.dumps({"status": "error", "message": "No research results available for search"})
+
+    try:
+        # Build documents from results
+        documents = []
+        for result in engine.results:
+            doc = {
+                "text": f"{result.title} {result.summary} {result.content}",
+                "metadata": {
+                    "title": result.title,
+                    "url": result.url,
+                    "relevance_score": result.relevance_score
+                }
+            }
+            documents.append(doc)
+
+        # Perform semantic search
+        search_results = intelligence_engine.semantic_search(query, documents, top_k)
+
+        return json.dumps({
+            "status": "success",
+            "query": query,
+            "results_count": len(search_results),
+            "results": search_results
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Score Source Credibility",
+    description="Analyze and score the credibility of a source"
+)
+def score_source_credibility(
+    url: str = Field(description="URL of the source to analyze"),
+    title: str = Field(default="", description="Title of the source"),
+    content: str = Field(default="", description="Content to analyze")
+) -> str:
+    """Score source credibility using multiple factors"""
+    global intelligence_engine
+
+    try:
+        # Find matching result if content not provided
+        if not content:
+            global engine
+            for result in engine.results:
+                if result.url == url:
+                    title = result.title
+                    content = result.content
+                    break
+
+        if not content:
+            return json.dumps({"status": "error", "message": "Source not found in results. Provide content parameter."})
+
+        metadata = {"timestamp": ""}
+        credibility_score = intelligence_engine.score_credibility(url, title, content, metadata)
+
+        return json.dumps({
+            "status": "success",
+            "url": url,
+            "credibility": credibility_score
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Build Knowledge Graph",
+    description="Generate a knowledge graph from research results"
+)
+def build_knowledge_graph() -> str:
+    """Extract entities and relationships to build knowledge graph"""
+    global engine, intelligence_engine
+
+    if not engine.results:
+        return json.dumps({"status": "error", "message": "No research results available"})
+
+    try:
+        # Prepare documents
+        documents = []
+        for result in engine.results:
+            doc = {
+                "title": result.title,
+                "content": result.content,
+                "url": result.url
+            }
+            documents.append(doc)
+
+        # Build knowledge graph
+        knowledge_graph = intelligence_engine.build_knowledge_graph(documents)
+
+        return json.dumps({
+            "status": "success",
+            "knowledge_graph": knowledge_graph
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Expand Query",
+    description="Generate query expansions and related search suggestions"
+)
+def expand_query(
+    query: str = Field(description="Query to expand"),
+    use_results: bool = Field(default=False, description="Use research results for context")
+) -> str:
+    """Expand query with synonyms and generate related searches"""
+    global engine, intelligence_engine
+
+    try:
+        results_context = []
+        if use_results and engine.results:
+            results_context = [
+                {"title": r.title, "content": r.summary}
+                for r in engine.results[:10]
+            ]
+
+        expansion = intelligence_engine.expand_query(query, results_context)
+
+        return json.dumps({
+            "status": "success",
+            "original_query": query,
+            "expansion": expansion
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Save Research Session",
+    description="Save current research session to database"
+)
+def save_research_session(
+    session_name: str = Field(description="Name for this research session")
+) -> str:
+    """Save research session with all results"""
+    global engine, intelligence_engine
+
+    if not engine.results or not engine.parameters:
+        return json.dumps({"status": "error", "message": "No active research session to save"})
+
+    try:
+        session_id = intelligence_engine.save_session(
+            session_name,
+            engine.parameters.query,
+            [r.to_dict() for r in engine.results]
+        )
+
+        return json.dumps({
+            "status": "success",
+            "message": f"Session saved as '{session_name}'",
+            "session_id": session_id
+        })
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="List Research Sessions",
+    description="List all saved research sessions"
+)
+def list_research_sessions() -> str:
+    """List all saved sessions"""
+    global intelligence_engine
+
+    try:
+        sessions = intelligence_engine.list_sessions()
+
+        return json.dumps({
+            "status": "success",
+            "sessions_count": len(sessions),
+            "sessions": sessions
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Load Research Session",
+    description="Load a previously saved research session"
+)
+def load_research_session(
+    session_id: str = Field(description="Session ID to load")
+) -> str:
+    """Load saved research session"""
+    global intelligence_engine
+
+    try:
+        session = intelligence_engine.get_session(session_id)
+
+        if not session:
+            return json.dumps({"status": "error", "message": f"Session {session_id} not found"})
+
+        return json.dumps({
+            "status": "success",
+            "session": session
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+# OSINT Engine Tools
+@mcp.tool(
+    title="Analyze Social Network",
+    description="Analyze social network connections and influence"
+)
+def analyze_social_network(
+    entities: str = Field(description="JSON array of entities with connections"),
+) -> str:
+    """Analyze social network to find influential nodes and communities"""
+    global osint_engine
+
+    try:
+        # Parse entities JSON
+        entities_data = json.loads(entities)
+
+        # Analyze network
+        analysis = osint_engine.analyze_social_network(entities_data)
+
+        return json.dumps({
+            "status": "success",
+            "network_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Track Digital Footprint",
+    description="Track and analyze digital footprint across platforms"
+)
+def track_digital_footprint(
+    entity_name: str = Field(description="Entity name to track"),
+    footprints: str = Field(description="JSON array of digital footprints")
+) -> str:
+    """Analyze digital presence across multiple platforms"""
+    global osint_engine
+
+    try:
+        # Parse footprints JSON
+        footprints_data = json.loads(footprints)
+
+        # Analyze footprint
+        analysis = osint_engine.track_digital_footprint(entity_name, footprints_data)
+
+        return json.dumps({
+            "status": "success",
+            "entity": entity_name,
+            "footprint_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Analyze Timeline",
+    description="Analyze timeline of events to detect patterns and clusters"
+)
+def analyze_timeline(
+    events: str = Field(description="JSON array of events with timestamps")
+) -> str:
+    """Analyze timeline for clusters, patterns, and anomalies"""
+    global osint_engine
+
+    try:
+        # Parse events JSON
+        events_data = json.loads(events)
+
+        # Analyze timeline
+        analysis = osint_engine.analyze_timeline(events_data)
+
+        return json.dumps({
+            "status": "success",
+            "timeline_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Analyze Sentiment Trends",
+    description="Track sentiment trends over time and detect shifts"
+)
+def analyze_sentiment_trends(
+    sentiment_data: str = Field(description="JSON array of sentiment data points")
+) -> str:
+    """Analyze sentiment trends and detect significant shifts"""
+    global osint_engine
+
+    try:
+        # Parse sentiment data JSON
+        data = json.loads(sentiment_data)
+
+        # Analyze trends
+        analysis = osint_engine.analyze_sentiment_trends(data)
+
+        return json.dumps({
+            "status": "success",
+            "sentiment_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Extract Geospatial Intelligence",
+    description="Extract and analyze location data from text"
+)
+def extract_geospatial_intelligence(
+    text: str = Field(description="Text to analyze for locations"),
+    use_research_results: bool = Field(default=False, description="Analyze all research results")
+) -> str:
+    """Extract locations and analyze geospatial patterns"""
+    global engine, osint_engine
+
+    try:
+        if use_research_results and engine.results:
+            # Analyze all research results
+            all_text = " ".join([f"{r.title} {r.content}" for r in engine.results])
+            analysis = osint_engine.extract_geospatial_intelligence(all_text)
+        else:
+            analysis = osint_engine.extract_geospatial_intelligence(text)
+
+        return json.dumps({
+            "status": "success",
+            "geospatial_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Detect Patterns",
+    description="Detect numerical patterns, trends, cycles, and anomalies"
+)
+def detect_patterns(
+    data: str = Field(description="JSON array of numerical data points"),
+    pattern_types: str = Field(default="all", description="Types: all, trends, cycles, anomalies")
+) -> str:
+    """Detect patterns in numerical data"""
+    global osint_engine
+
+    try:
+        # Parse data JSON
+        data_points = json.loads(data)
+
+        # Detect patterns
+        analysis = osint_engine.detect_numerical_patterns(data_points, pattern_types)
+
+        return json.dumps({
+            "status": "success",
+            "pattern_analysis": analysis
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Get Intelligence Score",
+    description="Calculate overall intelligence quality score for research"
+)
+def get_intelligence_score() -> str:
+    """Calculate comprehensive intelligence score"""
+    global engine, osint_engine
+
+    if not engine.results:
+        return json.dumps({"status": "error", "message": "No research results available"})
+
+    try:
+        results_data = [r.to_dict() for r in engine.results]
+        score = osint_engine.get_intelligence_score(results_data)
+
+        return json.dumps({
+            "status": "success",
+            "intelligence_score": score
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+@mcp.tool(
+    title="Comprehensive Intelligence Analysis",
+    description="Run complete intelligence analysis on research results"
+)
+def comprehensive_intelligence_analysis() -> str:
+    """Perform comprehensive intelligence and OSINT analysis"""
+    global engine, intelligence_engine, osint_engine
+
+    if not engine.results:
+        return json.dumps({"status": "error", "message": "No research results available"})
+
+    try:
+        # Prepare data
+        documents = [
+            {
+                "text": f"{r.title} {r.summary} {r.content}",
+                "title": r.title,
+                "content": r.content,
+                "url": r.url,
+                "metadata": r.metadata
+            }
+            for r in engine.results
+        ]
+
+        results_data = [r.to_dict() for r in engine.results]
+
+        # Run comprehensive analysis
+        analysis = {
+            "semantic_insights": intelligence_engine.comprehensive_analysis(
+                engine.parameters.query if engine.parameters else "",
+                documents
+            ),
+            "osint_intelligence": osint_engine.comprehensive_analysis(results_data),
+            "overall_quality": osint_engine.get_intelligence_score(results_data)
+        }
+
+        return json.dumps({
+            "status": "success",
+            "comprehensive_analysis": analysis
         }, indent=2)
 
     except Exception as e:
