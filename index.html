@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VerifyStack - AI Agent Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .status-value.healthy {
+            color: #10b981;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .verification-levels {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .level-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .level-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .level-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .level-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .level-details {
+            font-size: 0.85em;
+            opacity: 0.8;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .result-card.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .status-badge.verified {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.unverified {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.partial {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .confidence-score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .result-section {
+            margin-bottom: 30px;
+        }
+
+        .result-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .claim-text {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            color: #333;
+            border-left: 4px solid #667eea;
+        }
+
+        .reasoning {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .sources-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .source-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .source-item.conflicting {
+            border-left-color: #ef4444;
+        }
+
+        .source-item.supporting {
+            border-left-color: #10b981;
+        }
+
+        .source-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .source-url {
+            font-size: 0.85em;
+            color: #666;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .source-metrics {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .metric-label {
+            color: #666;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 VerifyStack</h1>
+            <p class="tagline">Stripe for AI Agent Verification</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">API Status</div>
+                <div class="status-value healthy" id="api-status">●</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Total Verifications</div>
+                <div class="status-value" id="total-verifications">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Credits Remaining</div>
+                <div class="status-value" id="credits-remaining">-</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Rate Limit</div>
+                <div class="status-value" id="rate-limit">-</div>
+            </div>
+        </div>
+
+        <div class="main-card">
+            <h2 style="margin-bottom: 30px;">Verify a Claim</h2>
+
+            <form id="verify-form">
+                <div class="form-group">
+                    <label for="claim">Claim to Verify</label>
+                    <textarea
+                        id="claim"
+                        placeholder="Enter a claim to verify... (e.g., 'The Eiffel Tower is located in Paris, France')"
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Verification Level</label>
+                    <div class="verification-levels">
+                        <div class="level-btn active" data-level="fast">
+                            <div class="level-name">⚡ Fast</div>
+                            <div class="level-details">5 sources • 1 credit</div>
+                        </div>
+                        <div class="level-btn" data-level="standard">
+                            <div class="level-name">⭐ Standard</div>
+                            <div class="level-details">10 sources • 3 credits</div>
+                        </div>
+                        <div class="level-btn" data-level="deep">
+                            <div class="level-name">🔬 Deep</div>
+                            <div class="level-details">20 sources • 5 credits</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Verify Claim</button>
+            </form>
+
+            <div class="error-message" id="error-message"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing claim and gathering evidence...</p>
+        </div>
+
+        <div class="result-card" id="result-card">
+            <div class="result-header">
+                <div class="result-status">
+                    <span class="status-badge" id="status-badge">Verified</span>
+                    <span class="confidence-score" id="confidence-score">95%</span>
+                </div>
+                <div style="color: #666; font-size: 0.9em;">
+                    ID: <span id="verification-id">-</span>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h3>Claim</h3>
+                <div class="claim-text" id="result-claim"></div>
+            </div>
+
+            <div class="result-section">
+                <h3>Analysis</h3>
+                <div class="reasoning" id="reasoning"></div>
+            </div>
+
+            <div class="result-section">
+                <h3>Evidence Sources</h3>
+                <div class="sources-grid" id="sources-grid"></div>
+            </div>
+
+            <div class="result-section">
+                <h3>Verification Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Sources Analyzed</div>
+                        <div class="stat-value" id="sources-analyzed">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Processing Time</div>
+                        <div class="stat-value" id="processing-time">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Verification Level</div>
+                        <div class="stat-value" id="verification-level">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Credits Used</div>
+                        <div class="stat-value" id="credits-used">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by VerifyStack Intelligence Engines</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        const API_KEY = 'vsk_demo_testkey12345678';
+
+        let selectedLevel = 'fast';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            loadUsageStats();
+
+            // Refresh stats every 30 seconds
+            setInterval(() => {
+                loadUsageStats();
+            }, 30000);
+        });
+
+        // Level selection
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedLevel = btn.dataset.level;
+            });
+        });
+
+        // Form submission
+        document.getElementById('verify-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await verifyClaim();
+        });
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/health`, {
+                    headers: {
+                        'X-API-Key': API_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    document.getElementById('api-status').textContent = '● Online';
+                    document.getElementById('api-status').style.color = '#10b981';
+                } else {
+                    document.getElementById('api-status').textContent = '● Offline';
+                    document.getElementById('api-status').style.color = '#ef4444';
+                }
+            } catch (error) {
+                document.getElementById('api-status').textContent = '● Offline';
+                document.getElementById('api-status').style.color = '#ef4444';
+            }
+        }
+
+        async function loadUsageStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/usage`, {
+                    headers: {
+                        'X-API-Key': API_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('total-verifications').textContent = data.total_verifications;
+                    document.getElementById('credits-remaining').textContent = data.credits_remaining.toLocaleString();
+                    document.getElementById('rate-limit').textContent = `${data.rate_limit_remaining}/100`;
+                }
+            } catch (error) {
+                console.error('Failed to load usage stats:', error);
+            }
+        }
+
+        async function verifyClaim() {
+            const claim = document.getElementById('claim').value.trim();
+
+            if (!claim) {
+                showError('Please enter a claim to verify');
+                return;
+            }
+
+            // Hide error and result
+            hideError();
+            document.getElementById('result-card').classList.remove('active');
+
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.querySelector('.submit-btn').disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
+                    body: JSON.stringify({
+                        claim: claim,
+                        verification_level: selectedLevel
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+                loadUsageStats(); // Refresh stats
+            } catch (error) {
+                showError(`Verification failed: ${error.message}`);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.querySelector('.submit-btn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            // Set basic info
+            document.getElementById('verification-id').textContent = data.verification_id;
+            document.getElementById('result-claim').textContent = data.claim;
+            document.getElementById('reasoning').textContent = data.reasoning;
+
+            // Set confidence score
+            const confidencePercent = (data.confidence_score * 100).toFixed(1);
+            document.getElementById('confidence-score').textContent = `${confidencePercent}%`;
+
+            // Set status badge
+            const statusBadge = document.getElementById('status-badge');
+            statusBadge.textContent = data.status;
+            statusBadge.className = `status-badge ${data.status}`;
+
+            // Set stats
+            document.getElementById('sources-analyzed').textContent = data.sources_analyzed;
+            document.getElementById('processing-time').textContent = `${data.processing_time_ms}ms`;
+            document.getElementById('verification-level').textContent = data.verification_level;
+            document.getElementById('credits-used').textContent = data.credits_used;
+
+            // Display sources
+            const sourcesGrid = document.getElementById('sources-grid');
+            sourcesGrid.innerHTML = '';
+
+            const allSources = [
+                ...(data.evidence.supporting_sources || []).map(s => ({...s, type: 'supporting'})),
+                ...(data.evidence.conflicting_sources || []).map(s => ({...s, type: 'conflicting'})),
+                ...(data.evidence.neutral_sources || []).map(s => ({...s, type: 'neutral'}))
+            ];
+
+            if (allSources.length === 0) {
+                sourcesGrid.innerHTML = '<p style="color: #666;">No sources found for this claim.</p>';
+            } else {
+                allSources.forEach(source => {
+                    const sourceEl = document.createElement('div');
+                    sourceEl.className = `source-item ${source.type}`;
+                    sourceEl.innerHTML = `
+                        <div class="source-title">${source.title || 'Untitled Source'}</div>
+                        <div class="source-url">${source.url}</div>
+                        <div class="source-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Credibility:</span>
+                                <span class="metric-value">${(source.credibility * 100).toFixed(0)}%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Relevance:</span>
+                                <span class="metric-value">${(source.relevance * 100).toFixed(0)}%</span>
+                            </div>
+                        </div>
+                    `;
+                    sourcesGrid.appendChild(sourceEl);
+                });
+            }
+
+            // Show result card
+            document.getElementById('result-card').classList.add('active');
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error-message');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('error-message').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
