@@ -107,8 +107,8 @@ class Storage:
         self.verifications: Dict[str, Dict] = {}
         self.usage_stats: Dict[str, Dict] = {}
 
-        # Create a demo API key
-        demo_key = "vsk_demo_" + secrets.token_urlsafe(32)
+        # Create a demo API key (fixed for easy testing)
+        demo_key = "vsk_demo_testkey12345678"
         self.api_keys[demo_key] = {
             "name": "Demo Key",
             "credits": 10000,
@@ -227,10 +227,7 @@ class VerificationEngine:
             relevance_threshold=0.3
         )
 
-        await self.research_engine.research(params)
-
-        # Get research results
-        results = self.research_engine.results
+        results = await self.research_engine.run_research(params)
 
         if not results:
             return {
@@ -248,28 +245,24 @@ class VerificationEngine:
                 "processing_time_ms": int((time.time() - start_time) * 1000)
             }
 
-        # Phase 2: Analyze with intelligence engine
-        documents = [
-            {
-                "text": f"{r.title} {r.summary} {r.content}",
-                "title": r.title,
-                "url": r.url,
-                "metadata": r.metadata
-            }
-            for r in results
-        ]
+        # Phase 2: Build semantic search index
+        for r in results:
+            self.intelligence_engine.semantic_search.add_document(
+                r.url, r.title, f"{r.summary} {r.content}"
+            )
+        self.intelligence_engine.semantic_search.build_index()
 
-        # Semantic search for claim
-        semantic_results = self.intelligence_engine.semantic_search(
-            claim,
-            documents,
-            top_k=len(documents)
+        # Semantic search for claim relevance
+        semantic_results = self.intelligence_engine.semantic_search.search(
+            claim, top_k=len(results)
         )
+        # Map url -> similarity score
+        sem_score_map = {s["doc_id"]: s.get("score", 0) for s in semantic_results}
 
         # Phase 3: Credibility scoring
         credibility_scores = []
         for result in results:
-            score = self.intelligence_engine.score_credibility(
+            score = self.intelligence_engine.credibility_scorer.score_source(
                 url=result.url,
                 title=result.title,
                 content=result.content,
@@ -285,7 +278,8 @@ class VerificationEngine:
 
         # Phase 4: OSINT analysis
         results_data = [r.to_dict() for r in results]
-        osint_analysis = self.osint_engine.comprehensive_analysis(results_data)
+        osint_score = self.osint_engine.get_intelligence_score(results_data)
+        osint_analysis = {"overall_quality": osint_score}
 
         # Phase 5: Determine confidence and categorize sources
         supporting = []
@@ -295,9 +289,9 @@ class VerificationEngine:
         avg_credibility = sum(s["credibility"] for s in credibility_scores) / len(credibility_scores)
         avg_relevance = sum(r.relevance_score for r in results) / len(results)
 
-        # Categorize sources based on semantic similarity and sentiment
+        # Categorize sources based on semantic similarity and credibility
         for i, result in enumerate(results):
-            semantic_score = semantic_results[i]["similarity"] if i < len(semantic_results) else 0
+            semantic_score = sem_score_map.get(result.url, 0)
             credibility = credibility_scores[i]["credibility"]
 
             source_info = {
