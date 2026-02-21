@@ -257,7 +257,7 @@ class VerificationEngine:
             claim, top_k=len(results)
         )
         # Map url -> similarity score
-        sem_score_map = {s["doc_id"]: s.get("score", 0) for s in semantic_results}
+        sem_score_map = {s["doc"]["id"]: s.get("similarity", 0) for s in semantic_results}
 
         # Phase 3: Credibility scoring
         credibility_scores = []
