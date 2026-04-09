@@ -17,12 +17,16 @@ from research_engine import (
     ResearchResult
 )
 from asset_generator import AssetGeneratorManager
+from knowledge_base import KnowledgeBase
 
 # Initialize MCP server
 mcp = FastMCP("Research & Content Gathering Server", stateless_http=True)
 
-# Global research engine instance
-engine = ResearchEngine()
+# Knowledge base — persists to ~/.ridiculous/knowledge.db
+kb = KnowledgeBase()
+
+# Global research engine instance (wired to KB)
+engine = ResearchEngine(knowledge_base=kb)
 current_task: Optional[asyncio.Task] = None
 
 # Global asset generator instance
@@ -741,6 +745,180 @@ def generate_multi_platform_package(
             "results": results
         }, indent=2)
 
+    except Exception as e:
+        return json.dumps({"status": "error", "message": str(e)})
+
+
+# Knowledge Base Tools
+
+@mcp.tool(
+    title="List Past Research Sessions",
+    description="List recent research sessions from the persistent knowledge base"
+)
+def list_past_sessions(
+    n: int = Field(default=10, description="Number of recent sessions to return")
+) -> str:
+    """List recent completed research sessions stored in the knowledge base."""
+    sessions = kb.get_recent_sessions(n)
+    source_stats = kb.get_source_stats()
+    top_topics = kb.get_top_topics(n=15, across_sessions=True)
+
+    return json.dumps({
+        "status": "success",
+        "session_count": len(sessions),
+        "sessions": sessions,
+        "all_time_source_stats": source_stats,
+        "all_time_top_topics": top_topics[:10],
+    }, indent=2)
+
+
+@mcp.tool(
+    title="Load Past Research Session",
+    description="Load results from a past research session into the active engine"
+)
+def load_past_session(
+    session_id: str = Field(description="Session ID to load (from list_past_sessions)")
+) -> str:
+    """Restore results from a past session into the engine so they can be used immediately."""
+    global engine
+
+    session_meta = kb.load_session(session_id)
+    if not session_meta:
+        return json.dumps({"status": "error", "message": f"Session {session_id} not found"})
+
+    raw_results = kb.load_session_results(session_id)
+    if not raw_results:
+        return json.dumps({"status": "error", "message": "Session has no results"})
+
+    # Reconstruct ResearchResult objects from stored dicts
+    loaded = []
+    for r in raw_results:
+        try:
+            loaded.append(ResearchResult(
+                id=r["id"],
+                title=r["title"],
+                url=r["url"],
+                content=r["content"],
+                summary=r["summary"],
+                relevance_score=r["relevance_score"],
+                source_type=r["source_type"],
+                source_id=r.get("source_id", "unknown"),
+                timestamp=r["timestamp"],
+                metadata=r.get("metadata", {}),
+            ))
+        except (KeyError, TypeError):
+            continue
+
+    engine.results = loaded
+
+    # Restore parameters stub so get_results works
+    from research_engine import ResearchParameters
+    engine.parameters = ResearchParameters(
+        query=session_meta.get("query", ""),
+        source_type="all",
+    )
+
+    return json.dumps({
+        "status": "success",
+        "message": f"Loaded {len(loaded)} results from session '{session_meta.get('query', session_id)}'",
+        "session_id": session_id,
+        "query": session_meta.get("query"),
+        "result_count": len(loaded),
+        "original_avg_relevance": session_meta.get("avg_relevance"),
+    }, indent=2)
+
+
+@mcp.tool(
+    title="Search Knowledge Base",
+    description="Search across all past research sessions for relevant results and insights"
+)
+def search_knowledge_base(
+    query: str = Field(description="Search query to find past research results")
+) -> str:
+    """
+    Search the persistent knowledge base for results matching the query.
+    Also surfaces insight gaps (high-demand but low-coverage topics) and
+    related past sessions that share topic overlap with the query.
+    """
+    matches = kb.search_all_sessions(query)
+    gaps = kb.get_insight_gaps(n=5)
+    related = kb.get_related_sessions(query, n=3)
+    cross_source = kb.get_cross_source_topics()
+
+    # Filter cross_source to topics relevant to the query
+    query_terms = set(w.lower() for w in query.split() if len(w) > 3)
+    relevant_cross = {
+        topic: sources
+        for topic, sources in cross_source.items()
+        if any(term in topic for term in query_terms)
+    }
+
+    return json.dumps({
+        "status": "success",
+        "query": query,
+        "matches": matches,
+        "match_count": len(matches),
+        "insight_gaps": gaps,
+        "related_sessions": related,
+        "cross_source_topics": relevant_cross,
+    }, indent=2)
+
+
+@mcp.tool(
+    title="Generate Research-Infused Asset",
+    description="Generate a platform asset using the current session's research results"
+)
+def generate_researched_asset(
+    platform: str = Field(description="Platform: youtube, gumroad, etsy, web, game, canva"),
+    asset_type: str = Field(description="Asset type for the platform (e.g. video_script, product_listing)"),
+    topic: str = Field(default="", description="Topic/name override (defaults to current research query)"),
+    use_current_research: bool = Field(default=True, description="Infuse with current session research results"),
+) -> str:
+    """
+    Generate a platform asset that is directly informed by current research results.
+    Unlike the individual platform tools, this automatically wires the research data
+    into the generator so content reflects actual findings, not generic templates.
+    """
+    global engine, asset_manager
+
+    research_data = None
+    if use_current_research and engine.results:
+        research_data = [r.to_dict() for r in engine.results]
+
+    effective_topic = topic or (engine.parameters.query if engine.parameters else "research topic")
+
+    # Build kwargs based on asset_type
+    kwargs: Dict[str, Any] = {}
+    if asset_type in ("video_script", "thumbnail_template", "tags"):
+        kwargs["topic"] = effective_topic
+    elif asset_type == "video_description":
+        script = asset_manager.youtube.generate_video_script(effective_topic, research_results=research_data)
+        kwargs["topic"] = effective_topic
+        kwargs["script"] = script
+    elif asset_type in ("product_listing",):
+        kwargs["product_name"] = effective_topic
+    elif asset_type == "landing_page":
+        kwargs["product_name"] = effective_topic
+    elif asset_type == "blog_post_template":
+        kwargs["topic"] = effective_topic
+    elif asset_type == "game_design_document":
+        kwargs["game_name"] = effective_topic
+    elif asset_type == "template_specs":
+        pass  # no required kwargs
+
+    try:
+        result = asset_manager.generate_asset(
+            platform, asset_type, research_results=research_data, **kwargs
+        )
+        return json.dumps({
+            "status": "success",
+            "platform": platform,
+            "asset_type": asset_type,
+            "topic": effective_topic,
+            "research_infused": research_data is not None,
+            "research_result_count": len(research_data) if research_data else 0,
+            "result": result,
+        }, indent=2)
     except Exception as e:
         return json.dumps({"status": "error", "message": str(e)})
 

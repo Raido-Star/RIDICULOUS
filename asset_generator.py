@@ -1,6 +1,11 @@
 """
 Asset Generator Module
-Generate assets for multiple platforms: YouTube, Gumroad, Canva, Etsy, game engines, websites, etc.
+Generate assets for multiple platforms: YouTube, Gumroad, Canva, Etsy, game engines, websites.
+
+All public generate_* methods accept an optional research_results parameter.
+When provided (list of ResearchResult.to_dict() output), generated content is
+infused with real data from research: actual summaries, citations, topic keywords.
+When omitted, methods fall back to template behavior (backwards compatible).
 """
 
 from typing import Dict, Any, List, Optional
@@ -12,7 +17,7 @@ from pathlib import Path
 
 @dataclass
 class AssetTemplate:
-    """Base template for generated assets"""
+    """Base template for generated assets."""
     platform: str
     asset_type: str
     title: str
@@ -22,20 +27,93 @@ class AssetTemplate:
     created_at: str
 
 
-class YouTubeAssetGenerator:
-    """Generate assets for YouTube content creation"""
+def _extract_research_context(research_results: list[dict]) -> dict[str, Any]:
+    """
+    Extract structured context from a list of ResearchResult.to_dict() dicts.
 
-    def generate_video_script(self, topic: str, duration: str = "10min", style: str = "educational") -> Dict[str, Any]:
-        """Generate YouTube video script"""
+    Returns a unified context dict used by all generators to infuse their
+    output with real research data. Handles empty / None input gracefully.
+    """
+    if not research_results:
+        return {}
+
+    # Sort by relevance_score descending, take top 5
+    sorted_results = sorted(
+        research_results,
+        key=lambda r: r.get("relevance_score", 0),
+        reverse=True,
+    )
+    top = sorted_results[:5]
+
+    # Aggregate key_topics across all results
+    topic_freq: dict[str, int] = {}
+    for r in research_results:
+        for topic, freq in r.get("metadata", {}).get("key_topics", []):
+            topic_freq[topic] = topic_freq.get(topic, 0) + int(freq)
+
+    top_topics = [
+        t for t, _ in sorted(topic_freq.items(), key=lambda x: x[1], reverse=True)[:15]
+    ]
+
+    # Source diversity
+    source_types = list({r.get("source_type", "") for r in research_results if r.get("source_type")})
+    source_ids = list({r.get("source_id", "") for r in research_results if r.get("source_id")})
+
+    avg_relevance = (
+        sum(r.get("relevance_score", 0) for r in research_results) / len(research_results)
+        if research_results else 0.0
+    )
+
+    return {
+        "top_summaries": [r.get("summary", "") for r in top if r.get("summary")],
+        "top_titles": [r.get("title", "") for r in top if r.get("title")],
+        "citations": [
+            {"title": r.get("title", ""), "url": r.get("url", ""), "source_id": r.get("source_id", "")}
+            for r in top
+        ],
+        "key_topics": top_topics,
+        "source_types": source_types,
+        "source_ids": source_ids,
+        "avg_relevance": avg_relevance,
+        "result_count": len(research_results),
+    }
+
+
+class YouTubeAssetGenerator:
+    """Generate assets for YouTube content creation."""
+
+    def generate_video_script(
+        self,
+        topic: str,
+        duration: str = "10min",
+        style: str = "educational",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate YouTube video script, optionally infused with research data."""
         scripts = {
             "educational": self._educational_script,
             "entertainment": self._entertainment_script,
             "tutorial": self._tutorial_script,
-            "review": self._review_script
+            "review": self._review_script,
         }
-
         script_gen = scripts.get(style, self._educational_script)
-        return script_gen(topic, duration)
+        result = script_gen(topic, duration)
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("top_summaries") and ctx.get("top_titles"):
+                result["main_points"] = [
+                    f"{title}: {summary[:140]}..."
+                    for title, summary in zip(ctx["top_titles"], ctx["top_summaries"])
+                ][:5]
+            if ctx.get("citations"):
+                result["research_citations"] = ctx["citations"]
+            if ctx.get("key_topics"):
+                result["research_tags"] = ctx["key_topics"][:10]
+            if ctx.get("source_ids"):
+                result["sources_used"] = ctx["source_ids"]
+
+        return result
 
     def _educational_script(self, topic: str, duration: str) -> Dict[str, Any]:
         return {
@@ -47,11 +125,11 @@ class YouTubeAssetGenerator:
                 f"Key concepts and fundamentals of {topic}",
                 f"Practical applications and examples",
                 f"Common mistakes to avoid",
-                f"Advanced tips and best practices"
+                f"Advanced tips and best practices",
             ],
             "conclusion": f"That's everything you need to know about {topic}. If you found this helpful, don't forget to like and subscribe!",
             "call_to_action": "Subscribe for more educational content",
-            "timestamps": self._generate_timestamps(duration)
+            "timestamps": self._generate_timestamps(duration),
         }
 
     def _entertainment_script(self, topic: str, duration: str) -> Dict[str, Any]:
@@ -61,8 +139,8 @@ class YouTubeAssetGenerator:
             "segments": [
                 {"type": "intro", "content": f"Let's talk about {topic}..."},
                 {"type": "main", "content": f"Here's what makes {topic} so interesting..."},
-                {"type": "outro", "content": "Thanks for watching!"}
-            ]
+                {"type": "outro", "content": "Thanks for watching!"},
+            ],
         }
 
     def _tutorial_script(self, topic: str, duration: str) -> Dict[str, Any]:
@@ -74,9 +152,9 @@ class YouTubeAssetGenerator:
                 f"Step 2: Setting up your workspace",
                 f"Step 3: Implementing {topic}",
                 f"Step 4: Testing and refinement",
-                f"Step 5: Advanced techniques"
+                f"Step 5: Advanced techniques",
             ],
-            "conclusion": "Now you know how to do it! Practice and you'll master it."
+            "conclusion": "Now you know how to do it! Practice and you'll master it.",
         }
 
     def _review_script(self, topic: str, duration: str) -> Dict[str, Any]:
@@ -86,8 +164,8 @@ class YouTubeAssetGenerator:
                 {"name": "Introduction", "content": f"Today I'm reviewing {topic}"},
                 {"name": "Pros", "content": "Let's start with what I liked..."},
                 {"name": "Cons", "content": "Now for the downsides..."},
-                {"name": "Verdict", "content": "Final thoughts and recommendation"}
-            ]
+                {"name": "Verdict", "content": "Final thoughts and recommendation"},
+            ],
         }
 
     def _generate_timestamps(self, duration: str) -> List[str]:
@@ -95,12 +173,17 @@ class YouTubeAssetGenerator:
             "0:00 - Introduction",
             "1:30 - Main Topic",
             "5:00 - Key Points",
-            "8:00 - Conclusion"
+            "8:00 - Conclusion",
         ]
 
-    def generate_thumbnail_template(self, topic: str, style: str = "bold") -> Dict[str, Any]:
-        """Generate YouTube thumbnail design specs"""
-        return {
+    def generate_thumbnail_template(
+        self,
+        topic: str,
+        style: str = "bold",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate YouTube thumbnail design specs."""
+        result = {
             "dimensions": "1280x720",
             "text": topic.upper(),
             "style": style,
@@ -111,84 +194,102 @@ class YouTubeAssetGenerator:
                 "Supporting text or number",
                 "High-contrast background",
                 "Optional: Face or product image",
-                "Optional: Arrow or highlight circle"
+                "Optional: Arrow or highlight circle",
             ],
             "best_practices": [
                 "Use high contrast colors",
                 "Keep text readable on mobile",
                 "Include faces if possible",
                 "Use emotional expressions",
-                "Add intrigue or curiosity elements"
-            ]
+                "Add intrigue or curiosity elements",
+            ],
         }
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("key_topics"):
+                result["keyword_overlays"] = ctx["key_topics"][:3]
+        return result
 
     def _get_color_scheme(self, style: str) -> Dict[str, str]:
         schemes = {
             "bold": {"primary": "#FF0000", "secondary": "#FFFF00", "background": "#000000"},
             "professional": {"primary": "#2C3E50", "secondary": "#3498DB", "background": "#ECF0F1"},
             "vibrant": {"primary": "#E74C3C", "secondary": "#9B59B6", "background": "#F39C12"},
-            "minimal": {"primary": "#34495E", "secondary": "#7F8C8D", "background": "#FFFFFF"}
+            "minimal": {"primary": "#34495E", "secondary": "#7F8C8D", "background": "#FFFFFF"},
         }
         return schemes.get(style, schemes["bold"])
 
-    def generate_video_description(self, topic: str, script: Dict[str, Any]) -> str:
-        """Generate optimized YouTube video description"""
-        description = f"""In this video, we cover {topic} in detail.
-
-📌 What You'll Learn:
-"""
+    def generate_video_description(
+        self,
+        topic: str,
+        script: Dict[str, Any],
+        research_results: list[dict] | None = None,
+    ) -> str:
+        """Generate optimized YouTube video description."""
+        description = f"In this video, we cover {topic} in detail.\n\n📌 What You'll Learn:\n"
         if "main_points" in script:
             for point in script["main_points"]:
                 description += f"✓ {point}\n"
 
-        description += f"""
-
-⏱️ Timestamps:
-"""
+        description += "\n⏱️ Timestamps:\n"
         if "timestamps" in script:
             for timestamp in script["timestamps"]:
                 description += f"{timestamp}\n"
 
-        description += """
+        description += "\n🔔 Subscribe for more content!\n👍 Like if you found this helpful!\n💬 Comment your thoughts below!\n\n#tutorial #howto #educational\n"
 
-🔔 Subscribe for more content!
-👍 Like if you found this helpful!
-💬 Comment your thoughts below!
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("citations"):
+                description += "\n\n📚 Research Sources:\n"
+                for cit in ctx["citations"][:5]:
+                    if cit.get("url") and cit.get("title"):
+                        description += f"• {cit['title']}: {cit['url']}\n"
 
-#tutorial #howto #educational
-
----
-📧 Business inquiries: contact@example.com
-🌐 Website: https://example.com
-"""
+        description += "\n---\n📧 Business inquiries: contact@example.com\n"
         return description
 
-    def generate_tags(self, topic: str, category: str = "education") -> List[str]:
-        """Generate SEO-optimized tags"""
+    def generate_tags(
+        self,
+        topic: str,
+        category: str = "education",
+        research_results: list[dict] | None = None,
+    ) -> List[str]:
+        """Generate SEO-optimized tags, enriched with research keywords when available."""
         base_tags = [
             topic.lower(),
             f"{topic} tutorial",
             f"how to {topic}",
             f"{topic} guide",
-            f"learn {topic}"
+            f"learn {topic}",
         ]
-
         category_tags = {
             "education": ["educational", "learning", "tutorial", "guide"],
             "entertainment": ["fun", "interesting", "amazing", "facts"],
             "gaming": ["gameplay", "gaming", "playthrough", "walkthrough"],
-            "tech": ["technology", "tech", "review", "unboxing"]
+            "tech": ["technology", "tech", "review", "unboxing"],
         }
+        all_tags = base_tags + category_tags.get(category, [])
 
-        return base_tags + category_tags.get(category, [])
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            research_tags = [t.replace(" ", "-").lower() for t in ctx.get("key_topics", [])[:8]]
+            all_tags = list(dict.fromkeys(all_tags + research_tags))  # dedup, preserve order
+
+        return all_tags[:30]  # YouTube allows ~500 chars total in tags
 
 
 class GumroadAssetGenerator:
-    """Generate assets for Gumroad digital products"""
+    """Generate assets for Gumroad digital products."""
 
-    def generate_product_listing(self, product_name: str, product_type: str = "ebook") -> Dict[str, Any]:
-        """Generate Gumroad product listing"""
-        return {
+    def generate_product_listing(
+        self,
+        product_name: str,
+        product_type: str = "ebook",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate Gumroad product listing, optionally research-infused."""
+        result = {
             "name": product_name,
             "type": product_type,
             "description": self._create_product_description(product_name, product_type),
@@ -200,12 +301,31 @@ class GumroadAssetGenerator:
                     "Use high-quality mockups",
                     "Show product preview",
                     "Include benefit text",
-                    "Professional typography"
-                ]
+                    "Professional typography",
+                ],
             },
             "content_checklist": self._get_content_checklist(product_type),
-            "marketing_copy": self._generate_marketing_copy(product_name)
+            "marketing_copy": self._generate_marketing_copy(product_name),
         }
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("top_summaries"):
+                research_body = "\n\n".join(
+                    f"• {s}" for s in ctx["top_summaries"][:3] if s
+                )
+                result["description"] = (
+                    result["description"]
+                    + f"\n\n📖 What the research says:\n{research_body}"
+                )
+            if ctx.get("key_topics"):
+                result["feature_bullets"] = ctx["key_topics"][:8]
+            if ctx.get("citations"):
+                result["credibility_sources"] = ctx["citations"][:3]
+            if ctx.get("source_ids"):
+                result["research_sources"] = ctx["source_ids"]
+
+        return result
 
     def _create_product_description(self, name: str, ptype: str) -> str:
         templates = {
@@ -220,7 +340,6 @@ What's Inside:
 • Bonus resources and templates
 
 Perfect for anyone looking to master this subject!""",
-
             "template": f"""🎨 {name}
 
 Professional-grade templates ready to use immediately.
@@ -233,7 +352,6 @@ Includes:
 • Free updates
 
 Save hours of work with these ready-made templates!""",
-
             "course": f"""🎓 {name}
 
 Complete course with everything you need to succeed.
@@ -245,7 +363,7 @@ Course Includes:
 • Certificate of completion
 • Lifetime access
 
-Start learning today!"""
+Start learning today!""",
         }
         return templates.get(ptype, templates["ebook"])
 
@@ -254,71 +372,72 @@ Start learning today!"""
             "ebook": {"min": 9, "suggested": 29, "max": 99},
             "template": {"min": 5, "suggested": 19, "max": 49},
             "course": {"min": 49, "suggested": 149, "max": 499},
-            "bundle": {"min": 29, "suggested": 99, "max": 299}
+            "bundle": {"min": 29, "suggested": 99, "max": 299},
         }
         return pricing.get(product_type, {"min": 10, "suggested": 30, "max": 100})
 
     def _get_content_checklist(self, product_type: str) -> List[str]:
         checklists = {
             "ebook": [
-                "Cover design",
-                "Table of contents",
-                "Chapters written and edited",
-                "Images and graphics",
-                "PDF formatted",
-                "Preview pages (first chapter)"
+                "Cover design", "Table of contents", "Chapters written and edited",
+                "Images and graphics", "PDF formatted", "Preview pages (first chapter)",
             ],
             "template": [
-                "Template files",
-                "Documentation/instructions",
-                "Preview images",
-                "Example usage",
-                "License information"
+                "Template files", "Documentation/instructions", "Preview images",
+                "Example usage", "License information",
             ],
             "course": [
-                "Video lessons recorded",
-                "Course outline/curriculum",
-                "Downloadable resources",
-                "Exercises/assignments",
-                "Quiz or assessment",
-                "Certificate template"
-            ]
+                "Video lessons recorded", "Course outline/curriculum", "Downloadable resources",
+                "Exercises/assignments", "Quiz or assessment", "Certificate template",
+            ],
         }
         return checklists.get(product_type, [])
 
-    def _generate_marketing_copy(self, product_name: str) -> Dict[str, str]:
+    def _generate_marketing_copy(self, product_name: str) -> Dict[str, Any]:
         return {
             "headline": f"Transform Your Skills with {product_name}",
             "subheadline": "Everything you need to succeed, all in one place",
             "benefits": [
-                "Save time and effort",
-                "Learn from experts",
-                "Immediate access",
-                "Lifetime updates",
-                "Money-back guarantee"
+                "Save time and effort", "Learn from experts", "Immediate access",
+                "Lifetime updates", "Money-back guarantee",
             ],
             "cta": "Get Instant Access Now",
-            "guarantee": "30-day money-back guarantee - no questions asked"
+            "guarantee": "30-day money-back guarantee - no questions asked",
         }
 
 
 class EtsyAssetGenerator:
-    """Generate assets for Etsy shop products"""
+    """Generate assets for Etsy shop products."""
 
-    def generate_product_listing(self, product_name: str, category: str = "digital") -> Dict[str, Any]:
-        """Generate Etsy product listing"""
-        return {
+    def generate_product_listing(
+        self,
+        product_name: str,
+        category: str = "digital",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate Etsy product listing, enriched with research keywords when available."""
+        result = {
             "title": self._optimize_title(product_name, category),
             "description": self._create_description(product_name, category),
             "tags": self._generate_tags(product_name, category),
             "images": self._image_requirements(),
             "pricing": self._pricing_guide(category),
             "shipping": self._shipping_info(category),
-            "seo_tips": self._seo_optimization_tips()
+            "seo_tips": self._seo_optimization_tips(),
         }
 
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("key_topics"):
+                research_tags = [
+                    t.replace(" ", "-").lower() for t in ctx["key_topics"][:6]
+                ]
+                combined = list(dict.fromkeys(result["tags"] + research_tags))
+                result["tags"] = combined[:13]  # Etsy max 13 tags
+
+        return result
+
     def _optimize_title(self, name: str, category: str) -> str:
-        # Etsy titles should be descriptive and keyword-rich (max 140 chars)
         return f"{name} | {category.title()} Download | Printable | Instant Download"
 
     def _create_description(self, name: str, category: str) -> str:
@@ -342,39 +461,19 @@ class EtsyAssetGenerator:
 3. Customize if needed
 4. Print or use digitally
 
-🎁 PERFECT FOR:
-• Personal projects
-• Gifts
-• Business use
-• Special occasions
-
-❓ QUESTIONS?
-Feel free to message me anytime!
-
 ⚡ INSTANT DOWNLOAD - No shipping, no waiting!
-
----
-© All rights reserved. For personal and commercial use.
-Please do not resell or redistribute files.
 """
 
     def _generate_tags(self, name: str, category: str) -> List[str]:
-        base_tags = [
-            "digital download",
-            "printable",
-            "instant download",
-            name.lower()
-        ]
-
+        base_tags = ["digital download", "printable", "instant download", name.lower()]
         category_tags = {
             "art": ["wall art", "printable art", "digital print", "home decor"],
             "planner": ["planner", "organizer", "productivity", "planning"],
             "wedding": ["wedding", "bridal", "invitation", "celebrate"],
-            "craft": ["diy", "craft", "handmade", "creative"]
+            "craft": ["diy", "craft", "handmade", "creative"],
         }
-
         tags = base_tags + category_tags.get(category, [])
-        return tags[:13]  # Etsy allows max 13 tags
+        return tags[:13]
 
     def _image_requirements(self) -> Dict[str, Any]:
         return {
@@ -387,14 +486,13 @@ Please do not resell or redistribute files.
                 "Include size comparison",
                 "Show different variations",
                 "Use lifestyle shots",
-                "Include text overlay with features"
-            ]
+            ],
         }
 
     def _pricing_guide(self, category: str) -> Dict[str, Any]:
         return {
             "digital": {"min": 2, "suggested": 8, "max": 50},
-            "physical": {"min": 10, "suggested": 30, "max": 200}
+            "physical": {"min": 10, "suggested": 30, "max": 200},
         }
 
     def _shipping_info(self, category: str) -> str:
@@ -404,107 +502,92 @@ Please do not resell or redistribute files.
 
     def _seo_optimization_tips(self) -> List[str]:
         return [
-            "Use all 13 tags",
-            "Include long-tail keywords in title",
+            "Use all 13 tags", "Include long-tail keywords in title",
             "Write detailed descriptions (min 200 words)",
             "Use natural language, not keyword stuffing",
             "Update listings regularly to boost visibility",
-            "Respond to reviews and questions quickly",
-            "Offer variations when possible"
         ]
 
 
 class WebAssetGenerator:
-    """Generate assets for websites"""
+    """Generate assets for websites."""
 
-    def generate_landing_page(self, product_name: str, purpose: str = "sales") -> Dict[str, Any]:
-        """Generate landing page structure"""
-        return {
+    def generate_landing_page(
+        self,
+        product_name: str,
+        purpose: str = "sales",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate landing page structure, optionally informed by research findings."""
+        result = {
             "structure": self._page_structure(purpose),
             "copy": self._landing_page_copy(product_name, purpose),
             "design_specs": self._design_specifications(),
             "seo": self._seo_elements(product_name),
-            "conversion_elements": self._conversion_optimization()
+            "conversion_elements": self._conversion_optimization(),
         }
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("top_summaries"):
+                result["copy"]["hero_supporting_points"] = ctx["top_summaries"][:3]
+            if ctx.get("key_topics"):
+                result["copy"]["features"] = ctx["key_topics"][:6]
+                result["seo"]["keywords"] = ctx["key_topics"][:10]
+            if ctx.get("citations"):
+                result["social_proof_sources"] = ctx["citations"]
+
+        return result
 
     def _page_structure(self, purpose: str) -> List[str]:
         structures = {
             "sales": [
-                "Hero section with headline",
-                "Problem/solution statement",
-                "Features and benefits",
-                "Social proof (testimonials)",
-                "Pricing table",
-                "FAQ section",
-                "Strong CTA",
-                "Footer"
+                "Hero section with headline", "Problem/solution statement",
+                "Features and benefits", "Social proof (testimonials)",
+                "Pricing table", "FAQ section", "Strong CTA", "Footer",
             ],
             "portfolio": [
-                "Hero with introduction",
-                "Skills/services overview",
-                "Project showcase",
-                "About section",
-                "Testimonials",
-                "Contact form"
+                "Hero with introduction", "Skills/services overview",
+                "Project showcase", "About section", "Testimonials", "Contact form",
             ],
             "blog": [
-                "Header with navigation",
-                "Featured post",
-                "Post grid",
-                "Sidebar with categories",
-                "Newsletter signup",
-                "Footer"
-            ]
+                "Header with navigation", "Featured post", "Post grid",
+                "Sidebar with categories", "Newsletter signup", "Footer",
+            ],
         }
         return structures.get(purpose, structures["sales"])
 
-    def _landing_page_copy(self, product: str, purpose: str) -> Dict[str, str]:
+    def _landing_page_copy(self, product: str, purpose: str) -> Dict[str, Any]:
         return {
             "headline": f"The Ultimate {product} You've Been Looking For",
             "subheadline": "Solve your problems and achieve your goals faster than ever",
             "features": [
-                "Easy to use and implement",
-                "Professional quality results",
-                "Save time and money",
-                "Backed by experts"
+                "Easy to use and implement", "Professional quality results",
+                "Save time and money", "Backed by experts",
             ],
             "cta_primary": "Get Started Now",
-            "cta_secondary": "Learn More"
+            "cta_secondary": "Learn More",
         }
 
     def _design_specifications(self) -> Dict[str, Any]:
         return {
             "color_palette": {
-                "primary": "#2563EB",
-                "secondary": "#7C3AED",
-                "accent": "#F59E0B",
-                "background": "#FFFFFF",
-                "text": "#1F2937"
+                "primary": "#2563EB", "secondary": "#7C3AED",
+                "accent": "#F59E0B", "background": "#FFFFFF", "text": "#1F2937",
             },
             "typography": {
                 "heading_font": "Inter, Montserrat, or Poppins",
                 "body_font": "Inter, Open Sans, or Roboto",
-                "sizes": {
-                    "h1": "48-64px",
-                    "h2": "36-48px",
-                    "h3": "24-32px",
-                    "body": "16-18px"
-                }
+                "sizes": {"h1": "48-64px", "h2": "36-48px", "h3": "24-32px", "body": "16-18px"},
             },
-            "spacing": {
-                "section_padding": "80-120px vertical",
-                "container_max_width": "1200px",
-                "grid_gap": "24-32px"
-            }
         }
 
-    def _seo_elements(self, product: str) -> Dict[str, str]:
+    def _seo_elements(self, product: str) -> Dict[str, Any]:
         return {
             "title": f"{product} - Your Solution for Success",
-            "meta_description": f"Discover {product} and transform the way you work. Professional quality, easy to use, and proven results.",
+            "meta_description": f"Discover {product} and transform the way you work.",
             "og_title": f"{product} - Get Started Today",
-            "og_description": f"Join thousands of satisfied users who chose {product}",
-            "keywords": [product.lower(), "solution", "professional", "quality"]
+            "keywords": [product.lower(), "solution", "professional", "quality"],
         }
 
     def _conversion_optimization(self) -> List[str]:
@@ -512,54 +595,81 @@ class WebAssetGenerator:
             "Clear value proposition above the fold",
             "Use contrasting CTA buttons",
             "Include trust badges and security seals",
-            "Add countdown timers for urgency",
             "Display customer testimonials",
-            "Show real-time social proof",
             "Minimize form fields",
-            "Add exit-intent popups",
-            "Use A/B testing"
         ]
 
-    def generate_blog_post_template(self, topic: str) -> Dict[str, Any]:
-        """Generate blog post outline and template"""
-        return {
+    def generate_blog_post_template(
+        self,
+        topic: str,
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate blog post outline, populated with research findings when available."""
+        result = {
             "title": f"The Complete Guide to {topic}",
             "structure": [
                 "Introduction - Hook and preview",
-                "What is {topic}?",
-                "Why {topic} matters",
-                "How to implement {topic}",
+                f"What is {topic}?",
+                f"Why {topic} matters",
+                f"How to implement {topic}",
                 "Common mistakes to avoid",
                 "Best practices and tips",
-                "Conclusion and next steps"
+                "Conclusion and next steps",
             ],
-            "meta_description": f"Learn everything about {topic} in this comprehensive guide. Includes tips, examples, and best practices.",
+            "meta_description": f"Learn everything about {topic} in this comprehensive guide.",
             "seo_tips": [
                 f"Use '{topic}' in first 100 words",
                 "Include internal and external links",
                 "Add images with alt text",
-                "Use header tags (H2, H3)",
                 "Aim for 1500+ words",
-                "Include FAQ section"
             ],
-            "call_to_action": "Subscribe to our newsletter for more guides like this!"
+            "call_to_action": "Subscribe to our newsletter for more guides like this!",
         }
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("top_titles") and ctx.get("top_summaries"):
+                result["research_findings"] = [
+                    {"heading": t, "content": s}
+                    for t, s in zip(ctx["top_titles"], ctx["top_summaries"])
+                ][:5]
+            if ctx.get("citations"):
+                result["citations"] = ctx["citations"]
+                result["suggested_external_links"] = [
+                    c["url"] for c in ctx["citations"] if c.get("url")
+                ]
+
+        return result
 
 
 class GameAssetGenerator:
-    """Generate assets for game development"""
+    """Generate assets for game development."""
 
-    def generate_game_design_document(self, game_name: str, genre: str = "action") -> Dict[str, Any]:
-        """Generate game design document structure"""
-        return {
+    def generate_game_design_document(
+        self,
+        game_name: str,
+        genre: str = "action",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate game design document, optionally inspired by research context."""
+        result = {
             "concept": self._game_concept(game_name, genre),
             "mechanics": self._game_mechanics(genre),
             "story": self._story_structure(),
             "characters": self._character_templates(),
             "levels": self._level_design_framework(),
             "ui_ux": self._ui_specifications(),
-            "monetization": self._monetization_strategies()
+            "monetization": self._monetization_strategies(),
         }
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("top_titles"):
+                result["concept"]["inspiration_sources"] = ctx["top_titles"][:3]
+            if ctx.get("key_topics"):
+                result["concept"]["thematic_keywords"] = ctx["key_topics"][:8]
+
+        return result
 
     def _game_concept(self, name: str, genre: str) -> Dict[str, Any]:
         return {
@@ -568,32 +678,14 @@ class GameAssetGenerator:
             "platform": ["PC", "Mobile", "Console"],
             "target_audience": "Ages 13+",
             "unique_selling_point": f"Innovative {genre} gameplay with unique mechanics",
-            "elevator_pitch": f"{name} is a {genre} game that combines exciting gameplay with immersive storytelling"
+            "elevator_pitch": f"{name} is a {genre} game that combines exciting gameplay with immersive storytelling",
         }
 
     def _game_mechanics(self, genre: str) -> List[str]:
         mechanics = {
-            "action": [
-                "Combat system",
-                "Movement mechanics",
-                "Power-ups and abilities",
-                "Health and damage system",
-                "Enemy AI behavior"
-            ],
-            "puzzle": [
-                "Core puzzle mechanic",
-                "Difficulty progression",
-                "Hint system",
-                "Time limits or moves",
-                "Combo system"
-            ],
-            "rpg": [
-                "Character progression",
-                "Inventory system",
-                "Quest system",
-                "Dialogue trees",
-                "Combat mechanics"
-            ]
+            "action": ["Combat system", "Movement mechanics", "Power-ups and abilities", "Health and damage system", "Enemy AI behavior"],
+            "puzzle": ["Core puzzle mechanic", "Difficulty progression", "Hint system", "Time limits or moves", "Combo system"],
+            "rpg": ["Character progression", "Inventory system", "Quest system", "Dialogue trees", "Combat mechanics"],
         }
         return mechanics.get(genre, mechanics["action"])
 
@@ -604,24 +696,13 @@ class GameAssetGenerator:
             "antagonist": "Main villain or opposing force",
             "conflict": "Central conflict driving the story",
             "resolution": "How the story concludes",
-            "themes": "Core themes and messages"
+            "themes": "Core themes and messages",
         }
 
     def _character_templates(self) -> List[Dict[str, str]]:
         return [
-            {
-                "name": "Protagonist",
-                "role": "Main playable character",
-                "abilities": "List of skills and powers",
-                "backstory": "Character history",
-                "personality": "Character traits"
-            },
-            {
-                "name": "Companion",
-                "role": "Supporting character",
-                "relationship": "Connection to protagonist",
-                "abilities": "Support skills"
-            }
+            {"name": "Protagonist", "role": "Main playable character", "abilities": "List of skills and powers", "backstory": "Character history"},
+            {"name": "Companion", "role": "Supporting character", "relationship": "Connection to protagonist", "abilities": "Support skills"},
         ]
 
     def _level_design_framework(self) -> Dict[str, Any]:
@@ -629,97 +710,84 @@ class GameAssetGenerator:
             "level_count": "10-15 levels recommended",
             "progression": "Easy → Medium → Hard → Boss",
             "level_structure": [
-                "Introduction/tutorial area",
-                "Main gameplay section",
-                "Challenge/puzzle element",
-                "Reward/checkpoint",
-                "Boss or finale"
+                "Introduction/tutorial area", "Main gameplay section",
+                "Challenge/puzzle element", "Reward/checkpoint", "Boss or finale",
             ],
-            "pacing": "Balance action and exploration"
+            "pacing": "Balance action and exploration",
         }
 
     def _ui_specifications(self) -> Dict[str, List[str]]:
         return {
-            "main_menu": [
-                "Play/Start",
-                "Settings",
-                "Achievements",
-                "Quit"
-            ],
-            "hud_elements": [
-                "Health bar",
-                "Score/points",
-                "Mini-map",
-                "Ability cooldowns",
-                "Objective tracker"
-            ],
-            "design_principles": [
-                "Clear visual hierarchy",
-                "Consistent styling",
-                "Accessibility options",
-                "Responsive to different screen sizes"
-            ]
+            "main_menu": ["Play/Start", "Settings", "Achievements", "Quit"],
+            "hud_elements": ["Health bar", "Score/points", "Mini-map", "Ability cooldowns", "Objective tracker"],
+            "design_principles": ["Clear visual hierarchy", "Consistent styling", "Accessibility options"],
         }
 
     def _monetization_strategies(self) -> List[str]:
         return [
-            "Premium (paid upfront)",
-            "Free-to-play with ads",
-            "In-app purchases (cosmetics)",
-            "Battle pass system",
-            "Expansion packs/DLC"
+            "Premium (paid upfront)", "Free-to-play with ads",
+            "In-app purchases (cosmetics)", "Battle pass system", "Expansion packs/DLC",
         ]
 
 
 class CanvaAssetGenerator:
-    """Generate templates and assets for Canva"""
+    """Generate templates and assets for Canva."""
 
-    def generate_template_specs(self, template_type: str = "social") -> Dict[str, Any]:
-        """Generate Canva template specifications"""
+    def generate_template_specs(
+        self,
+        template_type: str = "social",
+        research_results: list[dict] | None = None,
+    ) -> Dict[str, Any]:
+        """Generate Canva template specifications."""
         specs = {
             "social": {
                 "instagram_post": {"size": "1080x1080px", "format": "Square"},
                 "instagram_story": {"size": "1080x1920px", "format": "Vertical"},
                 "facebook_post": {"size": "1200x630px", "format": "Landscape"},
                 "twitter_post": {"size": "1200x675px", "format": "Landscape"},
-                "pinterest_pin": {"size": "1000x1500px", "format": "Vertical"}
+                "pinterest_pin": {"size": "1000x1500px", "format": "Vertical"},
             },
             "marketing": {
                 "flyer": {"size": "8.5x11in", "format": "Letter"},
                 "business_card": {"size": "3.5x2in", "format": "Standard"},
                 "brochure": {"size": "11x8.5in", "format": "Tri-fold"},
-                "poster": {"size": "24x36in", "format": "Large"}
+                "poster": {"size": "24x36in", "format": "Large"},
             },
             "presentation": {
                 "slide_deck": {"size": "1920x1080px", "format": "16:9"},
-                "infographic": {"size": "800x2000px", "format": "Vertical"}
-            }
+                "infographic": {"size": "800x2000px", "format": "Vertical"},
+            },
         }
 
-        return {
+        result = {
             "specifications": specs.get(template_type, specs["social"]),
             "design_tips": self._design_tips(),
             "color_palettes": self._color_palettes(),
-            "font_pairings": self._font_pairings()
+            "font_pairings": self._font_pairings(),
         }
+
+        if research_results:
+            ctx = _extract_research_context(research_results)
+            if ctx.get("key_topics"):
+                result["content_themes"] = ctx["key_topics"][:6]
+            if ctx.get("top_summaries"):
+                result["copy_inspiration"] = ctx["top_summaries"][:2]
+
+        return result
 
     def _design_tips(self) -> List[str]:
         return [
-            "Use high contrast for readability",
-            "Maintain consistent spacing",
-            "Limit fonts to 2-3 families",
-            "Use white space effectively",
-            "Align elements to a grid",
-            "Use hierarchy to guide the eye",
-            "Include clear calls-to-action"
+            "Use high contrast for readability", "Maintain consistent spacing",
+            "Limit fonts to 2-3 families", "Use white space effectively",
+            "Align elements to a grid", "Include clear calls-to-action",
         ]
 
-    def _color_palettes(self) -> List[Dict[str, str]]:
+    def _color_palettes(self) -> List[Dict[str, Any]]:
         return [
             {"name": "Modern Blue", "colors": ["#2563EB", "#60A5FA", "#DBEAFE", "#1E3A8A"]},
             {"name": "Warm Sunset", "colors": ["#F59E0B", "#EF4444", "#FEE2E2", "#7C2D12"]},
             {"name": "Fresh Green", "colors": ["#10B981", "#6EE7B7", "#D1FAE5", "#065F46"]},
-            {"name": "Professional Gray", "colors": ["#374151", "#6B7280", "#E5E7EB", "#111827"]}
+            {"name": "Professional Gray", "colors": ["#374151", "#6B7280", "#E5E7EB", "#111827"]},
         ]
 
     def _font_pairings(self) -> List[Dict[str, str]]:
@@ -727,12 +795,12 @@ class CanvaAssetGenerator:
             {"heading": "Montserrat Bold", "body": "Open Sans"},
             {"heading": "Playfair Display", "body": "Source Sans Pro"},
             {"heading": "Bebas Neue", "body": "Roboto"},
-            {"heading": "Raleway", "body": "Lato"}
+            {"heading": "Raleway", "body": "Lato"},
         ]
 
 
 class AssetGeneratorManager:
-    """Main manager for all asset generators"""
+    """Main manager for all asset generators."""
 
     def __init__(self):
         self.youtube = YouTubeAssetGenerator()
@@ -742,41 +810,50 @@ class AssetGeneratorManager:
         self.game = GameAssetGenerator()
         self.canva = CanvaAssetGenerator()
 
-    def generate_asset(self, platform: str, asset_type: str, **kwargs) -> Dict[str, Any]:
-        """Generate asset for specified platform"""
+    def generate_asset(
+        self,
+        platform: str,
+        asset_type: str,
+        research_results: list[dict] | None = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """Generate asset for specified platform, with optional research infusion."""
         generators = {
             "youtube": self.youtube,
             "gumroad": self.gumroad,
             "etsy": self.etsy,
             "web": self.web,
             "game": self.game,
-            "canva": self.canva
+            "canva": self.canva,
         }
 
         generator = generators.get(platform.lower())
         if not generator:
             return {"error": f"Unknown platform: {platform}"}
 
-        # Call appropriate method based on asset_type
         method_name = f"generate_{asset_type}"
-        if hasattr(generator, method_name):
-            method = getattr(generator, method_name)
-            return method(**kwargs)
+        if not hasattr(generator, method_name):
+            return {"error": f"Asset type '{asset_type}' not found for platform '{platform}'"}
 
-        return {"error": f"Asset type '{asset_type}' not found for platform '{platform}'"}
+        method = getattr(generator, method_name)
+
+        # Pass research_results if the method supports it
+        import inspect
+        sig = inspect.signature(method)
+        if "research_results" in sig.parameters:
+            return method(research_results=research_results, **kwargs)
+        return method(**kwargs)
 
     def get_available_platforms(self) -> List[str]:
-        """Get list of supported platforms"""
         return ["youtube", "gumroad", "etsy", "web", "game", "canva"]
 
     def get_asset_types(self, platform: str) -> List[str]:
-        """Get available asset types for a platform"""
         asset_types = {
             "youtube": ["video_script", "thumbnail_template", "video_description", "tags"],
             "gumroad": ["product_listing"],
             "etsy": ["product_listing"],
             "web": ["landing_page", "blog_post_template"],
             "game": ["game_design_document"],
-            "canva": ["template_specs"]
+            "canva": ["template_specs"],
         }
         return asset_types.get(platform.lower(), [])

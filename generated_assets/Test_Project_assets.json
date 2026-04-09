@@ -1,0 +1,105 @@
+{
+  "youtube": {
+    "script": {
+      "title": "Complete Guide to Test Project",
+      "hook": "In this video, we'll explore everything you need to know about Test Project",
+      "introduction": "Welcome back! Today we're diving deep into Test Project. By the end of this video, you'll have a complete understanding of...",
+      "main_points": [
+        "What is Test Project and why it matters",
+        "Key concepts and fundamentals of Test Project",
+        "Practical applications and examples",
+        "Common mistakes to avoid",
+        "Advanced tips and best practices"
+      ],
+      "conclusion": "That's everything you need to know about Test Project. If you found this helpful, don't forget to like and subscribe!",
+      "call_to_action": "Subscribe for more educational content",
+      "timestamps": [
+        "0:00 - Introduction",
+        "1:30 - Main Topic",
+        "5:00 - Key Points",
+        "8:00 - Conclusion"
+      ]
+    },
+    "thumbnail": {
+      "dimensions": "1280x720",
+      "text": "TEST PROJECT",
+      "style": "bold",
+      "color_scheme": {
+        "primary": "#FF0000",
+        "secondary": "#FFFF00",
+        "background": "#000000"
+      },
+      "font_suggestions": [
+        "Impact",
+        "Montserrat Bold",
+        "Bebas Neue"
+      ],
+      "elements": [
+        "Main text (large, bold)",
+        "Supporting text or number",
+        "High-contrast background",
+        "Optional: Face or product image",
+        "Optional: Arrow or highlight circle"
+      ],
+      "best_practices": [
+        "Use high contrast colors",
+        "Keep text readable on mobile",
+        "Include faces if possible",
+        "Use emotional expressions",
+        "Add intrigue or curiosity elements"
+      ]
+    },
+    "tags": [
+      "test project",
+      "Test Project tutorial",
+      "how to Test Project",
+      "Test Project guide",
+      "learn Test Project",
+      "educational",
+      "learning",
+      "tutorial",
+      "guide"
+    ]
+  },
+  "gumroad": {
+    "name": "Test Project",
+    "type": "ebook",
+    "description": "\ud83d\udcda Test Project\n\nA comprehensive guide that will transform your understanding of the topic.\n\nWhat's Inside:\n\u2022 In-depth chapters covering all aspects\n\u2022 Practical examples and case studies\n\u2022 Step-by-step implementation guides\n\u2022 Bonus resources and templates\n\nPerfect for anyone looking to master this subject!",
+    "price_suggestion": {
+      "min": 9,
+      "suggested": 29,
+      "max": 99
+    },
+    "cover_image_specs": {
+      "dimensions": "1600x1200 (4:3 ratio)",
+      "format": "PNG or JPG",
+      "tips": [
+        "Use high-quality mockups",
+        "Show product preview",
+        "Include benefit text",
+        "Professional typography"
+      ]
+    },
+    "content_checklist": [
+      "Cover design",
+      "Table of contents",
+      "Chapters written and edited",
+      "Images and graphics",
+      "PDF formatted",
+      "Preview pages (first chapter)"
+    ],
+    "marketing_copy": {
+      "headline": "Transform Your Skills with Test Project",
+      "subheadline": "Everything you need to succeed, all in one place",
+      "benefits": [
+        "Save time and effort",
+        "Learn from experts",
+        "Immediate access",
+        "Lifetime updates",
+        "Money-back guarantee"
+      ],
+      "cta": "Get Instant Access Now",
+      "guarantee": "30-day money-back guarantee - no questions asked"
+    }
+  }
+}
